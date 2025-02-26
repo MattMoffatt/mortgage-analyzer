@@ -160,6 +160,20 @@ class Mortgage(ABC):
     def monthly_interest(self) -> float:
         return (self.rate / 100 / 12)
 
+    @property
+    def principal_and_interest(self) -> float:
+        if self.monthly_interest == 0:
+            return self.loan_amount / self.periods_remaining
+
+        #calculate principal_and_interest
+        return self.loan_amount * (self.monthly_interest * (1 + self.monthly_interest) ** self.periods_remaining / ((1 + self.monthly_interest) ** self.periods_remaining - 1))
+
+    """
+    These abstract methods need to be implemented at the sub class level
+    due to differences in how the calculations will run between the two 
+    subclasses.
+    """
+
     @abstractmethod
     def price(self) -> float:
         pass
@@ -184,13 +198,7 @@ class Mortgage(ABC):
     def loan_amount(self) -> float:
         pass
 
-    @property
-    def principal_and_interest(self) -> float:
-        if self.monthly_interest == 0:
-            return self.loan_amount / self.periods_remaining
-
-        #calculate principal_and_interest
-        return self.loan_amount * (self.monthly_interest * (1 + self.monthly_interest) ** self.periods_remaining / ((1 + self.monthly_interest) ** self.periods_remaining - 1))
+    # Calculation methods
 
     def amortization_schedule(self) -> pd.DataFrame:
         """
