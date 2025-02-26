@@ -13,6 +13,7 @@ A Streamlit application for analyzing current mortgages and comparing refinance 
 
 ```bash
 pip install -r requirements.txt
+```
 
 ## Directory Structure - including future additions
 
