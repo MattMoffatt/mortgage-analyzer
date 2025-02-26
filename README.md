@@ -17,6 +17,7 @@ pip install -r requirements.txt
 
 ## Directory Structure - including future additions
 
+```
 mortgage-analyzer/
 ├── src/                 # Core application code
 │   ├── models/          # Data models and business logic
@@ -31,7 +32,7 @@ mortgage-analyzer/
 │   └── main.py          # Application entry point
 ├── requirements.txt     # Project dependencies
 └── README.md            # Project documentation
-
+```
 
 ## Future Extensibility
 
