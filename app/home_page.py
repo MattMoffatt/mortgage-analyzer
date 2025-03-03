@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import streamlit as st
-from src.models.mortgage_classes import CurrentMortgage
+# from src.models.mortgage_classes import CurrentMortgage
 
 home = st.Page("pages/00_🏡_Home_Page_(pun_intended).py")
 

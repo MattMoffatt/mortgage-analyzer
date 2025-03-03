@@ -9,17 +9,55 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.models.mortgage_classes import CurrentMortgage
 
-left, center, right = st.columns([2,10,1])
+left, center, right = st.columns([6,18,6])
 
-center.write("# :violet[**Current Mortgage Details**]")
+with left:
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    home = st.Page("pages/00_🏡_Home_Page_(pun_intended).py")
 
-center.write("Current mortgage details will be used to calculate comparisons to the new mortgage scenarios you are reviewing.")
+    if st.button("**🏡 Home Page (pun intended)**"):
+        st.switch_page(home)
+
+with right:
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    pg2 = st.Page("pages/02_🆕_New_Scenario.py") 
+
+    if st.button("**🆕 New Scenario**"):
+        st.switch_page(pg2)
+
+
+with center:
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("# :violet[**Current Mortgage**]")
+    
+    st.write("Current mortgage details will be used to calculate comparisons to the new mortgage scenarios you are reviewing\
+           and give details regarding current current metrics.")
 
 
 col1, buff1, col2, buff2, col3 = st.columns([5, 0.5, 5, 0.5, 9])
 
 with col1:
-    st.write("")
     st.write("")
     st.write("")
     rate = st.number_input(
@@ -51,7 +89,6 @@ with col1:
 with col2:
     st.write("")
     st.write("")
-    st.write("")
     sqft = st.number_input(
         "**Square Footage**", min_value=0.0, value=2000.0, step=100.0, key="sqft1"
     )
@@ -70,7 +107,6 @@ with col3:
     st.write("")
     st.write("")
     st.write("")
-    st.write("")
 
     # Tax section with toggle
     tax_col1, tax_col2 = st.columns([9, 8])
@@ -84,6 +120,7 @@ with col3:
             step=100.0,
             key="tax1_annual",
         )
+        monthly_tax = tax / 12
     else:
         monthly_tax = tax_col2.number_input(
             "**Monthly Tax ($)**",
@@ -149,20 +186,26 @@ currentMort = CurrentMortgage(
     _total_pmt=pmt,
 )
 
-buff3, mid, buff4 = st.columns([4, 11, 1])
+buff3, mid, buff4 = st.columns([5, 15, 2])
 
 with mid:
     st.write("")
-    st.write("")
     # Display mortgage details
     st.write("## :violet[**Mortgage Calcs**]")
+
+
+dols, buffer, ratios = st.columns([8, 3, 8])   
+with dols:    
     st.write(
-        f"### **Principal & Interest**: :green[${currentMort.principal_and_interest:,.2f}]"
+        f"#### **Principal & Interest**: :green[${currentMort.principal_and_interest:,.2f}]"
     )
-    st.write(f"### **Current House Value**: :green[${currentMort.price:,.2f}]")
-    st.write(f"### **Current Equity**: :green[${currentMort.equity_value:,.2f}]")
-    st.write(f"### **Loan to Value Ratio**: :blue[{currentMort.loan_to_value:.2%}]")
-    st.write(f"### **Loan End Date**: :blue[{currentMort.end_date}]")
+    st.write(f"#### **Current House Value**: :green[${currentMort.price:,.2f}]")
+    st.write(f"#### **Current Equity**: :green[${currentMort.equity_value:,.2f}]")
+
+
+with ratios:
+    st.write(f"#### **Loan to Value Ratio**: :blue[{currentMort.loan_to_value:.2%}]")
+    st.write(f"#### **Loan End Date**: :blue[{currentMort.end_date}]")
 
 # Save to session state for use in other pages
 st.session_state["current_mortgage"] = currentMort
