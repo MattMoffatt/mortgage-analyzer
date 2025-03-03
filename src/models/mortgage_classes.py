@@ -348,7 +348,7 @@ CurrentMortgage Class
 """
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CurrentMortgage(Mortgage):
     _original_loan: float = field(repr=True)
     _loan_amount: float = field(repr=True)
@@ -528,7 +528,7 @@ NewMortgageScenario Class
 """
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NewMortgageScenario(Mortgage):
     _price: float = field(repr=True)
     # allow either downpayment_percent or downpayment_amount to be provided
