@@ -65,22 +65,39 @@ if "nm_rate" not in st.session_state:
     st.session_state.nm_rate = 5.5
 if "nm_price" not in st.session_state: 
     st.session_state.nm_price = 300000.0
+if "nm_start_date" not in st.session_state:
+    st.session_state.nm_start_date = dt.datetime.now()
 if "nm_sqft" not in st.session_state: 
     st.session_state.nm_sqft = 2000.0
 if "nm_pmi" not in st.session_state: 
     st.session_state.nm_pmi = 50.0
 if "nm_term" not in st.session_state: 
     st.session_state.nm_term = 30
-if "nm_downpayment" not in st.session_state: 
-    st.session_state.nm_downpayment = 60000.0
-if "nm_downpayment_percent" not in st.session_state: 
-    st.session_state.nm_downpayment_percent = 20.0
+
 if "nm_is_not_percent" not in st.session_state: 
     st.session_state.nm_is_not_percent = False
-if "nm_tax" not in st.session_state: 
-    st.session_state.nm_tax = 2600.0
-if "nm_insurance" not in st.session_state: 
-    st.session_state.nm_insurance = 2200.0
+if "nm_downpayment" not in st.session_state: 
+    st.session_state.nm_downpayment = st.session_state.price * 0.20
+if "nm_downpayment_percent" not in st.session_state: 
+    st.session_state.nm_downpayment_percent = 20.0
+
+# tax can be annual or monthly
+if "nm_is_monthly_tax" not in st.session_state:
+    st.session_state.nm_is_monthly_tax = False    
+if "nm_annual_tax" not in st.session_state: 
+    st.session_state.nm_annual_tax = 2600.0
+if "nm_monthly_tax" not in st.session_state: 
+    st.session_state.nm_monthly_tax = st.session_state.nm_annual_tax / 12
+
+# insurance can be annual or monthly
+if "nm_is_monthly_ins" not in st.session_state:
+    st.session_state.nm_is_monthly_ins = False    
+if "nm_annual_ins" not in st.session_state: 
+    st.session_state.nm_annual_ins = 2200.0
+if "nm_monthly_ins" not in st.session_state: 
+    st.session_state.nm_monthly_ins = st.session_state.nm_annual_ins / 12
+
+    
 if "nm_prin" not in st.session_state: 
     st.session_state.nm_prin = 0.0
 if "nm_prepay" not in st.session_state: 

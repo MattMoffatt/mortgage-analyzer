@@ -302,6 +302,50 @@ class Mortgage(ABC):
         remaining_balance = self._calculate_remaining_balance_at_year(loan_year)
 
         return future_value - remaining_balance
+    
+    def pmi_periods_remaining(self) -> int:
+        """
+        Calculate how many months of PMI payments remain until reaching 80% LTV ratio.
+        
+        Returns:
+            int: Number of monthly periods until PMI can be removed, or 0 if PMI is 
+                not required or already below 80% LTV.
+        """
+        # If already at 80% LTV or less, no PMI needed
+        if self.loan_amount / self.price <= 0.8:
+            return 0
+            
+        # Start with current loan amount
+        current_balance = self.loan_amount
+        target_balance = self.price * 0.8  # 80% of property value is the threshold
+        periods = 0
+        
+        # Continue until reaching target balance or loan is paid off
+        while current_balance > target_balance and periods < self.periods_remaining:
+            # Calculate interest for this period
+            interest = current_balance * self.monthly_interest
+            
+            # Calculate principal payment
+            principal_payment = min(
+                self.principal_and_interest - interest, 
+                current_balance
+            )
+            
+            # Calculate any extra principal
+            extra_principal = (
+                min(self.extra_principal, current_balance - principal_payment)
+                if (current_balance > principal_payment and 
+                    (self.prepay_periods == 0 or periods < self.prepay_periods))
+                else 0
+            )
+            
+            # Update the current balance
+            current_balance -= (principal_payment + extra_principal)
+            periods += 1
+            
+        # Return the number of periods calculated (or 0 if we didn't reach the target)
+        return periods if current_balance <= target_balance else 0
+        
 
 
 ############################################################

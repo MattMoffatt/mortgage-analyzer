@@ -264,7 +264,7 @@ with mid:
     st.header("&ensp;&ensp;:violet[**Mortgage Calculations**]")
 
 
-values, ratios, other = st.columns([3, 3, 3])   
+values, ratios, time = st.columns([3, 3, 3])   
 
 with values:
     
@@ -301,7 +301,7 @@ with ratios:
     )
 
 
-with other:
+with time:
 
     st.subheader("&ensp;Time Metrics", divider="violet")
 
