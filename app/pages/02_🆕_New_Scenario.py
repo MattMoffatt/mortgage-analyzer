@@ -9,35 +9,25 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.models.mortgage_classes import NewMortgageScenario
 
+###########################################################
+
+# Top of page
+
+###########################################################
+
+st.header("&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;:star:&ensp;&ensp;&ensp;:green[**New Mortgage**]&ensp;&ensp;&ensp;:star:", divider="grey")
+
 left, center, right = st.columns([6,18,6])
 
 with left:
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    pg2 = st.Page("pages/02_🆕_New_Scenario.py") 
 
-    if st.button("**🆕 New Scenario**"):
-        st.switch_page(pg2)
+    pg1 = st.Page("pages/01_💸_Current_Mortgage.py") 
+
+    if st.button("**💸 Current Mortgage**"):
+        st.switch_page(pg1)
 
 with right:
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
+
     pg3 = st.Page("pages/03_📈_Comparison.py")
 
     if st.button("**📈 Comparison**"):
@@ -45,16 +35,19 @@ with right:
 
 
 with center:
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("# &ensp;&ensp;:violet[**New Mortgage**]")
     
     st.write("Put in the details of the new mortgage you are evaluating to compare to your current mortgage.")
 
+###########################################################
 
-col1, buff1, col2, buff2, col3 = st.columns([5, 0.5, 8, 0.5, 6])
+# Input Section
+
+###########################################################    
+
+
+col1, buff1, col2, buff2, col3 = st.columns([5, 0.5, 8, 0.5, 6]) # split into thre columns with two blank buffer columns in between
+
+# left column
 
 with col1:
     st.write("")
@@ -89,6 +82,8 @@ with col1:
         key="prin1",
     )
 
+# middle column
+
 with col2:
     st.write("")
     st.write("")
@@ -109,7 +104,10 @@ with col2:
         key="prepay1",
     )
 
+# right column
+
 with col3:
+
 
     is_not_percent = st.toggle("% / $", value=False, key="down2")
     if is_not_percent:
@@ -186,24 +184,43 @@ NewMort = NewMortgageScenario(
     _downpayment_amount=downpayment
 )
 
-buff3, mid, buff4 = st.columns([5, 15, 2])
+###########################################################
+
+# Display Metrics Section
+
+###########################################################
+
+buff3, mid, buff4 = st.columns([6, 18, 6])
 
 with mid:
     st.write("")
-    # Display mortgage details
-    st.write("## &ensp;&ensp;:violet[**Mortgage Calcs**]")
+
+    st.header("&ensp;:green[**Mortgage Calculations**]")
 
 
-dols, buffer, ratios = st.columns([8, 3, 8])   
-with dols:    
-    st.write(f"#### **Loan Amount**: :green[${NewMort.loan_amount:,.2f}]")
-    st.write(
-        f"#### **Principal & Interest**: :green[${NewMort.principal_and_interest:,.2f}]"
+values, values2 = st.columns([6,6])
+
+with values: 
+
+    st.subheader("**&ensp;&ensp;&ensp;&ensp;&ensp;Loan Metrics:**",divider="green")
+
+    st.metric(
+        "**Loan Amount:**",
+        value=f"{NewMort.loan_amount:,.2f}"
     )
 
-with ratios:
-    st.write(f"#### **Expected PMI**: :green[${NewMort.monthly_pmi:,.2f}]")
-    st.write(f"#### **Total Monthly Payment**: :green[${NewMort.total_pmt:,.2f}]")
+    # st.write(f"#### **Loan Amount**: :green[${NewMort.loan_amount:,.2f}]")
+    # st.write(
+    #     f"#### **Principal & Interest**: :green[${NewMort.principal_and_interest:,.2f}]"
+    # )
+
+with values2:
+
+    st.subheader("**&ensp;&ensp;&ensp;&ensp;&ensp;Payment Metrics:**",divider="green")
+
+
+    # st.write(f"#### **Expected PMI**: :green[${NewMort.monthly_pmi:,.2f}]")
+    # st.write(f"#### **Total Monthly Payment**: :green[${NewMort.total_pmt:,.2f}]")
 
 # Save to session state for use in other pages
 st.session_state["new_mortgage"] = NewMort

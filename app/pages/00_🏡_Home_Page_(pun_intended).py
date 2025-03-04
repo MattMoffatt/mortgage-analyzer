@@ -1,13 +1,11 @@
 import streamlit as st
 
-"""
-# :dollar::house: Mortgage Calculator App :house::dollar:
+st.header("&ensp;&ensp;&ensp;&ensp;&ensp;:dollar::house: Mortgage Calculator App :house::dollar:", divider="violet")
 
-Use this app to help you compare your current mortgage to new mortgage
-scenarios you are pursuing.
+st.subheader("This app helps you compare your current mortgage to new mortgage \
+scenarios you are pursuing.")
 
-## &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Navigation:
-"""
+st.subheader("&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Navigation:", divider="grey")
 
 col1, col2 = st.columns([2, 5])
 
@@ -39,3 +37,4 @@ st.write("")
 # &ensp; arguments added to center the link on the page
 
 st.link_button("Original Repo Link", "https://github.com/MattMoffatt/mortgage-analyzer")
+
