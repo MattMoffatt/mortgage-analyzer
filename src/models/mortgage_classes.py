@@ -239,7 +239,13 @@ class Mortgage(ABC):
                 }
             )
 
-        return pd.DataFrame(schedule)
+            df = pd.DataFrame(schedule)
+
+            # Round monetary values to 2 decimal places
+            for col in df.columns:
+                df[col] = df[col].round(2)
+
+        return df
 
     def _calculate_remaining_balance_at_year(self, loan_year: int) -> float:
         """
