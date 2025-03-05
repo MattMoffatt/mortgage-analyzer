@@ -17,3 +17,4 @@ if not (st.session_state.get("current_mortgage") and st.session_state.get("new_m
 
 currentMort = st.session_state.current_mortgage
 NewMort = st.session_state.new_mortgage
+
