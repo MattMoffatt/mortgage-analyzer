@@ -1,22 +1,19 @@
 import sys
-import datetime as dt
 from pathlib import Path
 
 # Add the parent directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import streamlit as st
-from typing import Dict, Callable, Optional
+from typing import Callable, Optional
 
 def initialize_navigation_system():
-    # Initialize the navigation system in session state if not already present.
+    """
+    Initialize the navigation system in session state if not already present.
+    This only tracks the current page, it doesn't manage widget values.
+    """
     if "current_page" not in st.session_state:
         st.session_state.current_page = None
-    
-    # if on_page_exit key is not yet in session state, create an empty directory to store later page key-values
-    if "on_page_exit" not in st.session_state:
-        st.session_state.on_page_exit = {}
-
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -30,20 +27,25 @@ away from the page.
 
 def register_page(page_id: str, update_function: Optional[Callable] = None):
     """
-    Register the current page and its update function.
+    Register the current page ID.
+    Widget values will be automatically maintained by Streamlit's session state.
     
     Args:
         page_id: Unique identifier for this page
         update_function: Function to call when navigating away from this page
+                        (can be None if not needed)
     """
     # Initialize the navigation system if needed
     initialize_navigation_system()
     
-    # Register the update function for this page
-    st.session_state.on_page_exit[page_id] = update_function # update functions found on mortgage_utils.py
-    
     # Set the current page
     st.session_state.current_page = page_id
+    
+    # Store update function if provided
+    if update_function is not None:
+        if "page_update_functions" not in st.session_state:
+            st.session_state.page_update_functions = {}
+        st.session_state.page_update_functions[page_id] = update_function
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -56,17 +58,20 @@ associated with the page before navigating away.
 
 def safe_navigate(page_path: str):
     """
-    Safely navigate to another page, ensuring any exit handlers are called first.
+    Safely navigate to another page.
     
     Args:
         page_path: Path to the page to navigate to
     """
-    # Run the update function for the current page if it exists
+    # Execute any update function if it exists for the current page
     current_page = st.session_state.get("current_page")
-    if current_page and current_page in st.session_state.on_page_exit:
-        update_function = st.session_state.on_page_exit[current_page]
+    if current_page and "page_update_functions" in st.session_state:
+        update_function = st.session_state.page_update_functions.get(current_page)
         if update_function:
-            update_function()
+            try:
+                update_function()
+            except Exception as e:
+                st.error(f"Error updating page data: {e}")
     
     # Then navigate
     st.switch_page(page_path)

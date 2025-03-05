@@ -38,14 +38,14 @@ with left:
 
     home = st.Page("pages/00_🏡_Home_Page_(pun_intended).py")
 
-    if st.button("**🏡 Home Page (pun intended)**"):
+    if st.button("**🏡 Home Page (pun intended)**", key="current_mortgage_to_home"):
         safe_navigate(home)
 
 with right:
 
     pg2 = st.Page("pages/02_🆕_New_Scenario.py") 
 
-    if st.button("**🆕 New Scenario**"):
+    if st.button("**🆕 New Scenario**", key="current_mortgage_to_new_mortgage"):
         safe_navigate(pg2)
 
 
@@ -72,8 +72,7 @@ with col1:
 
     rate = st.number_input(
         "**Interest Rate (%)**",
-        min_value=0.0,
-        value=st.session_state.cm_rate,
+        min_value=0.0001,
         step=0.005,
         format="%0.3f",
         key="cm_rate",
@@ -82,8 +81,7 @@ with col1:
 
     balance = st.number_input(
         "**Current Loan Balance ($)**",
-        min_value=0.0,
-        value=st.session_state.cm_balance,
+        min_value=0.0001,
         step=1000.0,
         key="cm_balance",
     )
@@ -91,8 +89,7 @@ with col1:
 
     origin = st.number_input(
         "**Original Loan Amount ($)**",
-        min_value=0.0,
-        value=st.session_state.cm_origin,
+        min_value=0.0001,
         step=1000.0,
         key="cm_origin",
     )
@@ -100,7 +97,6 @@ with col1:
 
     start_date = st.date_input(
         "**Loan Start Date**",
-        value=st.session_state.cm_start_date, 
         key="cm_start_date"
     )
     
@@ -112,8 +108,7 @@ with col2:
 
     sqft = st.number_input(
         "**Square Footage**", 
-        min_value=0.0, 
-        value=st.session_state.cm_sqft,
+        min_value=0.0001, 
         step=100.0, 
         key="cm_sqft"
     )
@@ -121,8 +116,7 @@ with col2:
 
     ppsqft = st.number_input(
         "**Price per Sqft ($)**", 
-        min_value=0.0,
-        value=st.session_state.cm_ppsqft, 
+        min_value=0.0001,
         step=1.0, 
         key="cm_ppsqft"
     )
@@ -130,24 +124,21 @@ with col2:
 
     pmt = st.number_input(
         "**Total Monthly PMT ($)**", 
-        min_value=0.0, 
-        value=st.session_state.cm_pmt,
+        min_value=0.0001, 
         step=50.0, 
         key="cm_pmt"
     )
 
     pmi = st.number_input(
         "**Current Monthly PMI ($)**", 
-        min_value=0.0, 
-        value=st.session_state.cm_pmi,
+        min_value=0.0001, 
         step=10.0, 
         key="cm_pmi"
     )
 
     term = st.number_input(
         "**Loan Term (years)**", 
-        min_value=0, 
-        value=st.session_state.cm_term,
+        min_value=1, 
         key="cm_term"
     )
     
@@ -161,15 +152,13 @@ with col3:
 
     is_monthly_tax = tax_col1.toggle(
         "Annual/Monthly",
-        value=st.session_state.cm_is_monthly_tax, 
-        key="cm_is_monthly_tax_flag"
+        key="cm_is_monthly_tax"
     )
 
     if is_monthly_tax:
         monthly_tax = tax_col2.number_input(
             "**Monthly Tax ($)**",
-            min_value=0.0,
-            value=st.session_state.cm_tax_monthly,
+            min_value=0.0001,
             step=10.0,
             key="cm_tax_monthly",
         )
@@ -177,8 +166,7 @@ with col3:
     else:
         annual_tax = tax_col2.number_input(
             "**Annual Tax ($)**",
-            min_value=0.0,
-            value=st.session_state.cm_tax_annual,
+            min_value=0.0001,
             step=10.0,
             key="cm_tax_annual",
         )
@@ -190,15 +178,13 @@ with col3:
 
     is_monthly_ins = ins_col1.toggle(
         "Annual/Monthly", 
-        value=st.session_state.cm_is_monthly_ins,
-        key="cm_is_monthly_ins_flag"
+        key="cm_is_monthly_ins"
     )
 
     if is_monthly_ins:
         monthly_ins = ins_col2.number_input(
             "**Monthly Insurance ($)**",
-            min_value=0.0,
-            value=st.session_state.cm_ins_monthly,
+            min_value=0.0001,
             step=10.0,
             key="cm_ins_monthly",
         )
@@ -206,8 +192,7 @@ with col3:
     else:
         annual_ins = ins_col2.number_input(
             "**Annual Insurance ($)**",
-            min_value=0.0,
-            value=st.session_state.cm_ins_annual,
+            min_value=0.0001,
             step=100.0,
             key="cm_ins_annual",
         )
@@ -217,7 +202,6 @@ with col3:
     prin = st.number_input(
         "**Extra Monthly Principal ($)**",
         min_value=0.0,
-        value=st.session_state.cm_prin,
         step=100.0,
         key="cm_prin",
     )
@@ -225,27 +209,26 @@ with col3:
     prepay = st.number_input(
         "**Number of Prepay Periods (months)**",
         min_value=0,
-        value=st.session_state.cm_prepay,
         step=1,
         key="cm_prepay",
     )
 
-# inputs get saved into CurrentMortgage class for later comparison
-currentMort = CurrentMortgage(
-    _rate=st.session_state.cm_rate,
-    _years=st.session_state.cm_term,
-    _tax=st.session_state.cm_tax_annual,
-    _ins=st.session_state.cm_ins_annual,
-    _sqft=st.session_state.cm_sqft,
-    _extra_principal=st.session_state.cm_prin,
-    _prepay_periods=st.session_state.cm_prepay,
-    _original_loan=st.session_state.cm_origin,
-    _loan_amount=st.session_state.cm_balance,
-    _start_date=st.session_state.cm_start_date.strftime("%m/%d/%Y"),
-    _price_per_sqft=st.session_state.cm_ppsqft,
-    _monthly_pmi=st.session_state.cm_pmi,
-    _total_pmt=st.session_state.cm_pmt
-)
+# # inputs get saved into CurrentMortgage class for later comparison
+# currentMort = CurrentMortgage(
+#     _rate=rate,
+#     _years=term,
+#     _tax=annual_tax,
+#     _ins=annual_ins,
+#     _sqft=sqft,
+#     _extra_principal=prin,
+#     _prepay_periods=prepay,
+#     _original_loan=origin,
+#     _loan_amount=balance,
+#     _start_date=start_date.strftime("%m/%d/%Y"),
+#     _price_per_sqft=ppsqft,
+#     _monthly_pmi=pmi,
+#     _total_pmt=pmt
+# )
 
 ###########################################################
 
@@ -253,73 +236,115 @@ currentMort = CurrentMortgage(
 
 ###########################################################
 
-buff3, mid, buff4 = st.columns([6, 18, 6])
+st.write("")
+calc_col1, calc_col2, calc_col3 = st.columns([4, 2, 4])
 
-# # attempt at center justification...
-# with mid:
-#     st.write("")
-#     # Display mortgage details
-#     st.write("## &ensp;:violet[**Mortgage Calcs**]")
+with calc_col2:
+    # Initialize calculation flag if it doesn't exist
+    if "show_current_mortgage_calcs" not in st.session_state:
+        st.session_state.show_current_mortgage_calcs = False
+        
+    if st.button("**Calculate**", key="calculate_current_mortgage"):
+        # Call the update function directly to create the mortgage object
+        currentMort = CurrentMortgage(
+            _rate=rate,
+            _years=term,
+            _tax=annual_tax,
+            _ins=annual_ins,
+            _sqft=sqft,
+            _extra_principal=prin,
+            _prepay_periods=prepay,
+            _original_loan=origin,
+            _loan_amount=balance,
+            _start_date=start_date.strftime("%m/%d/%Y"),
+            _price_per_sqft=ppsqft,
+            _monthly_pmi=pmi,
+            _total_pmt=pmt
+        )
+        if currentMort is not None:
+            # Set the flag to show calculations
+            st.session_state.show_current_mortgage_calcs = True
 
-with mid:
-    st.write("")
+if st.session_state.show_current_mortgage_calcs:
 
-    st.header("&ensp;&ensp;:violet[**Mortgage Calculations**]")
+    try:
+        # Attempt to get the current mortgage object
+        # Either from the local variable (if just calculated) or from session state (if returning to page)
+        if 'currentMort' not in locals():
+            if "current_mortgage" in st.session_state and st.session_state.current_mortgage is not None:
+                currentMort = st.session_state.current_mortgage
+            else:
+                # No valid mortgage object found
+                st.warning("Please click Calculate to update the metrics.")
+                st.stop()  # Stop execution here to prevent errors
+
+        buff3, mid, buff4 = st.columns([6, 18, 6])
+
+        with mid:
+            st.write("")
+
+            st.header("&ensp;&ensp;:violet[**Mortgage Calculations**]")
 
 
-values, ratios, time = st.columns([3, 3, 3])   
+        values, ratios, time = st.columns([3, 3, 3])   
 
-with values:
+        with values:
+            
+            st.subheader("&ensp;Value Metrics", divider="violet")
+
+            st.metric(
+                "**Current Value:**",
+                value=f"${max(currentMort.price,0):,.2f}"
+            )
+
+            st.metric(
+                "**Current Equity:**",
+                value=f"${max(currentMort.equity_value,0):,.2f}"
+            )
+
+            st.metric(
+                "**Value in 5 Years (3% annual growth):**",
+                value=f"${max(currentMort.estimate_value_at_year(5),0):,.2f}",
+                delta=f"${max((currentMort.estimate_value_at_year(5) - currentMort.price),0):,.2f}"
+            )
+
+
+        with ratios:
+
+            st.subheader("&ensp;Ratio Metrics", divider="violet")
+
+            st.metric(
+                "**Loan to Value Ratio:**",
+                value="N/A" if currentMort.loan_to_value > 100 else f"{currentMort.loan_to_value:.2%}"
+            )
+
+            st.metric(
+                "**Equity Ratio:**",
+                value="N/A" if currentMort.loan_to_value > 100 else f"{(1-currentMort.loan_to_value):.2%}"
+            )
+
+
+        with time:
+
+            st.subheader("&ensp;Time Metrics", divider="violet")
+
+            st.metric(
+                "**Loan End Date:**",
+                value=f"{currentMort.end_date}"
+            )
+
+            st.metric(
+                "**Pay Periods Left:**",
+                value=f"{currentMort.periods_remaining}"
+            )
+
+        # Save to session state for use in other pages
+        st.session_state["current_mortgage"] = currentMort
+
+        # Add this at the bottom of any page to debug
+        if st.checkbox("Show session state debug info", key="debug_checkbox"):
+            st.write(st.session_state)
     
-    st.subheader("&ensp;Value Metrics", divider="violet")
-
-    st.metric(
-        "**Current Value:**",
-        value=f"${currentMort.price:,.2f}"
-    )
-
-    st.metric(
-        "**Current Equity:**",
-        value=f"${currentMort.equity_value:,.2f}"
-    )
-
-    st.metric(
-        "**Value in 5 Years (3% annual growth):**",
-        value=f"${currentMort.estimate_value_at_year(5):,.2f}",
-        delta=f"${(currentMort.estimate_value_at_year(5) - currentMort.price):,.2f}"
-    )
-
-
-with ratios:
-
-    st.subheader("&ensp;Ratio Metrics", divider="violet")
-
-    st.metric(
-        "**Loan to Value Ratio:**",
-        value=f"{currentMort.loan_to_value:.2%}"
-    )
-
-    st.metric(
-        "**Equity Ratio:**",
-        value=f"{(1-currentMort.loan_to_value):.2%}"
-    )
-
-
-with time:
-
-    st.subheader("&ensp;Time Metrics", divider="violet")
-
-    st.metric(
-        "**Loan End Date:**",
-        value=f"{currentMort.end_date}"
-    )
-
-    st.metric(
-        "**Pay Periods Left:**",
-        value=f"{currentMort.periods_remaining}"
-    )
-
-# Save to session state for use in other pages
-st.session_state["current_mortgage"] = currentMort
-
-# st.write(st.session_state)
+    except NameError:
+        st.warning("Please click Calculate to update the metrics.")
+        st.stop()
