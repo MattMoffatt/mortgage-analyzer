@@ -1,4 +1,31 @@
+import sys
+from pathlib import Path
 import streamlit as st
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from src.utils.session_utils import initialize_mortgage_app_state
+from src.utils.navigation_utils import register_page, safe_navigate
+
+###############################################################
+
+# Session state management
+
+###############################################################
+
+# Initialize all session state variables properly
+initialize_mortgage_app_state()
+
+# Register this as the home page (without an update function since there's nothing to save)
+register_page("home_page", None)
+
+
+###############################################################
+
+# Page Layout
+
+###############################################################
+
 
 st.header("&ensp;&ensp;&ensp;&ensp;&ensp;:dollar::house: Mortgage Calculator App :house::dollar:", divider="violet")
 
@@ -16,11 +43,14 @@ if "new_mortgage" not in st.session_state:
     st.session_state.new_mortgage = None
 
 with col1:
-    st.page_link("pages/01_💸_Current_Mortgage.py", label="💸 Current Mortgage")
-    st.write("")
-    st.page_link("pages/02_🆕_New_Scenario.py", label="🆕 New_Scenario")
-    st.write("")
-    st.page_link("pages/03_📈_Comparison.py", label="📈 Comparison")
+    if st.button("💸 Current Mortgage"):
+        safe_navigate("pages/01_💸_Current_Mortgage.py")
+    
+    if st.button("🆕 New Scenario"):
+        safe_navigate("pages/02_🆕_New_Scenario.py")
+    
+    if st.button("📈 Comparison"):
+        safe_navigate("pages/03_📈_Comparison.py")
 
 with col2:
     st.write("input your current mortgage details")
@@ -34,7 +64,8 @@ st.write("")
 st.write("")
 st.write("")
 
-# &ensp; arguments added to center the link on the page
+buff1, center, buff2 = st.columns([3,3,3])
 
-st.link_button("Original Repo Link", "https://github.com/MattMoffatt/mortgage-analyzer")
+with center:
+    st.link_button("Original Repo Link", "https://github.com/MattMoffatt/mortgage-analyzer")
 

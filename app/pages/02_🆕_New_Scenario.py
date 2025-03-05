@@ -9,6 +9,20 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.models.mortgage_classes import NewMortgageScenario
 
+# Import your utility functions
+from src.utils.navigation_utils import register_page, safe_navigate
+from src.utils.mortgage_utils import update_new_mortgage
+
+###########################################################
+
+# Set session and navigation functionality
+# Needed for persisting data across pages
+
+###########################################################
+
+
+register_page("new_mortgage", update_new_mortgage)
+
 ###########################################################
 
 # Top of page
@@ -24,14 +38,14 @@ with left:
     pg1 = st.Page("pages/01_💸_Current_Mortgage.py") 
 
     if st.button("**💸 Current Mortgage**"):
-        st.switch_page(pg1)
+        safe_navigate(pg1)
 
 with right:
 
     pg3 = st.Page("pages/03_📈_Comparison.py")
 
     if st.button("**📈 Comparison**"):
-        st.switch_page(pg3)
+        safe_navigate(pg3)
 
 
 with center:
@@ -242,14 +256,14 @@ with loan_col:
     )
 
     st.metric(
-        "**Value in 5 Years (3% annual growth):**",
+        "**Value in 5 Years (3% Ann growth):**",
         value=f"${NewMort.estimate_value_at_year(5):,.2f}",
         delta=F"${(NewMort.estimate_value_at_year(5) - NewMort.price):,.2f}",
         delta_color="normal"
     )
 
     st.metric(
-        "**Value in 10 Years (3% annual growth):**",
+        "**Value in 10 Years (3% Ann growth):**",
         value=f"${NewMort.estimate_value_at_year(10):,.2f}",
         delta=F"${(NewMort.estimate_value_at_year(10) - NewMort.price):,.2f}",
         delta_color="normal"

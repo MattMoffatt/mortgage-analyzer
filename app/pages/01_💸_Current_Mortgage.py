@@ -7,8 +7,11 @@ import streamlit as st
 # Add the parent directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from src.models.mortgage_classes import CurrentMortgage, NewMortgageScenario
+from src.models.mortgage_classes import CurrentMortgage
 
+# Import your utility functions
+from src.utils.navigation_utils import register_page, safe_navigate
+from src.utils.mortgage_utils import update_current_mortgage
 
 ###########################################################
 
@@ -18,56 +21,7 @@ from src.models.mortgage_classes import CurrentMortgage, NewMortgageScenario
 ###########################################################
 
 
-# Track which page we're on
-if "current_page" not in st.session_state:
-    st.session_state.current_page = None
-
-# Define update function for Current Mortgage page
-def update_current_mortgage():
-    if st.session_state.current_page == "current_mortgage":
-        # Update the current_mortgage object with latest values
-        st.session_state.current_mortgage = CurrentMortgage(
-            _rate=st.session_state.cm_rate,
-            _years=st.session_state.cm_term,
-            _tax=st.session_state.cm_tax_annual,
-            _ins=st.session_state.cm_ins_annual,
-            _sqft=st.session_state.cm_sqft,
-            _extra_principal=st.session_state.cm_prin,
-            _prepay_periods=st.session_state.cm_prepay,
-            _original_loan=st.session_state.cm_origin,
-            _loan_amount=st.session_state.cm_balance,
-            _start_date=st.session_state.cm_start_date.strftime("%m/%d/%Y"),
-            _price_per_sqft=st.session_state.cm_ppsqft,
-            _monthly_pmi=st.session_state.cm_pmi,
-            _total_pmt=st.session_state.cm_pmt
-        )
-    
-def update_new_mortgage():
-    if st.session_state.current_page == "new_mortgage":
-        # Update the new_mortgage object with latest values
-        st.session_state.new_mortgage = NewMortgageScenario(
-            _rate=st.session_state.nm_rate,
-            _years=st.session_state.nm_term,
-            _tax=st.session_state.nm_annual_tax,
-            _ins=st.session_state.nm_annual_ins,
-            _sqft=st.session_state.nm_sqft,
-            _extra_principal=st.session_state.nm_prin,
-            _prepay_periods=st.session_state.nm_prepay,
-            _price=st.session_state.nm_price,
-            _downpayment_amount=st.session_state.nm_downpayment
-)
-        
-# Register these functions to run when navigating away
-if "on_page_exit" not in st.session_state:
-    st.session_state.on_page_exit = {
-        "current_mortgage": update_current_mortgage,
-        "new_mortgage": update_new_mortgage
-    }
-
-# Set current page flag
-# In Current Mortgage page:
-st.session_state.current_page = "current_mortgage"
-
+register_page("current_mortgage", update_current_mortgage)
 
 
 ###########################################################
@@ -85,14 +39,14 @@ with left:
     home = st.Page("pages/00_🏡_Home_Page_(pun_intended).py")
 
     if st.button("**🏡 Home Page (pun intended)**"):
-        st.switch_page(home)
+        safe_navigate(home)
 
 with right:
 
     pg2 = st.Page("pages/02_🆕_New_Scenario.py") 
 
     if st.button("**🆕 New Scenario**"):
-        st.switch_page(pg2)
+        safe_navigate(pg2)
 
 
 with center:
