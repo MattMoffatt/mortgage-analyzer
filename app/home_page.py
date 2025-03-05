@@ -77,7 +77,7 @@ if "nm_term" not in st.session_state:
 if "nm_is_not_percent" not in st.session_state: 
     st.session_state.nm_is_not_percent = False
 if "nm_downpayment" not in st.session_state: 
-    st.session_state.nm_downpayment = st.session_state.price * 0.20
+    st.session_state.nm_downpayment = st.session_state.nm_price * 0.20
 if "nm_downpayment_percent" not in st.session_state: 
     st.session_state.nm_downpayment_percent = 20.0
 
@@ -97,7 +97,6 @@ if "nm_annual_ins" not in st.session_state:
 if "nm_monthly_ins" not in st.session_state: 
     st.session_state.nm_monthly_ins = st.session_state.nm_annual_ins / 12
 
-    
 if "nm_prin" not in st.session_state: 
     st.session_state.nm_prin = 0.0
 if "nm_prepay" not in st.session_state: 

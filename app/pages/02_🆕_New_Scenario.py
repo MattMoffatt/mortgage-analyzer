@@ -60,25 +60,22 @@ with col1:
         value=st.session_state.nm_rate,
         step=0.005,
         format="%0.3f",
-        key="nm_rate_input",
+        key="nm_rate",
     )
-    st.session_state.nm_rate = rate
 
     price = st.number_input(
         "**House Price ($)**",
         min_value=0.0,
         value=st.session_state.nm_price,
         step=1000.0,
-        key="nm_price_input",
+        key="nm_price",
     )
-    st.session_state.nm_price = price
 
     start_date = st.date_input(
-        "**Loan Start Date**", 
+        "**Loan Start Date**",
         value=st.session_state.nm_start_date, 
-        key="nm_start_date_input"
+        key="nm_start_date"
     )
-    st.session_state.nm_start_date = start_date
 
     # Additional payment details
     prin = st.number_input(
@@ -86,9 +83,8 @@ with col1:
         min_value=0.0,
         value=st.session_state.nm_prin,
         step=100.0,
-        key="nm_prin_input",
+        key="nm_prin",
     )
-    st.session_state.nm_prin = prin
 
 # middle column
 
@@ -99,49 +95,44 @@ with col2:
 
     sqft = st.number_input(
         "**Square Footage**", 
-        min_value=0.0, 
+        min_value=0.0,
         value=st.session_state.nm_sqft, 
         step=100.0, 
-        key="nm_sqft_input"
+        key="nm_sqft"
     )
-    st.session_state.nm_sqft = sqft
 
     pmi = st.number_input(
         "**Current Monthly PMI ($)**", 
-        min_value=0.0, 
+        min_value=0.0,
         value=st.session_state.nm_pmi, 
         step=10.0, 
-        key="nm_pmi_input"
+        key="nm_pmi"
     )
-    st.session_state.nm_pmi = pmi
 
     term = st.number_input(
         "**Loan Term (years)**", 
-        min_value=0, 
+        min_value=0,
         value=st.session_state.nm_term, 
-        key="nm_term_input"
+        key="nm_term"
     )
-    st.session_state.nm_term = term
 
     prepay = st.number_input(
         "**Number of Prepay Periods (months)**",
         min_value=0,
         value=st.session_state.nm_prepay,
         step=1,
-        key="nm_prepay_input",
+        key="nm_prepay",
     )
-    st.session_state.nm_prepay = prepay
 
 # right column
 
 with col3:
 
     is_not_percent = st.toggle(
-        "% / $", 
+        "% / $",
         value=st.session_state.nm_is_not_percent, 
-        key="nm_is_not_percent_input"
+        key="nm_is_not_percent"
     )
-    st.session_state.nm_is_not_percent = is_not_percent
 
     if is_not_percent:
         downpayment = st.number_input(
@@ -149,27 +140,24 @@ with col3:
             min_value=0.0,
             value=st.session_state.nm_downpayment,
             step=1000.0,
-            key="nm_downpayment_input",
+            key="nm_downpayment",
         )
-        st.session_state.nm_downpayment = downpayment
     else:
         downpayment_percent = st.number_input(
             "**Downpayment (%)**",
             min_value=0.0,
             value=st.session_state.nm_downpayment_percent,
             step=1.0,
-            key="nm_downpayment_percent_input"
+            key="nm_downpayment_percent"
         )
-        st.session_state.nm_downpayment_percent = downpayment_percent
         st.session_state.nm_downpayment = (st.session_state.nm_downpayment_percent / 100) * st.session_state.nm_price
-        
+
     # Tax section with toggle
     is_monthly_tax = st.toggle(
         "Annual/Monthly", 
         value=st.session_state.nm_is_monthly_tax,
-        key="nm_is_monthly_tax_input"
+        key="nm_is_monthly_tax"
     )
-    st.session_state.nm_is_monthly_tax = is_monthly_tax
 
     if is_monthly_tax:
         monthly_tax = st.number_input(
@@ -177,25 +165,24 @@ with col3:
             min_value=0.0,
             value=st.session_state.nm_monthly_tax,
             step=10.0,
-            key="nm_monthly_tax_input",
+            key="nm_monthly_tax",
         )
-        st.session_state.nm_monthly_tax = monthly_tax
-        tax = monthly_tax * 12  # Convert to annual for consistency
+        st.session_state.nm_annual_tax = st.session_state.nm_monthly_tax * 12
     else:
         tax = st.number_input(
             "**Annual Tax ($)**",
             min_value=0.0,
             value=st.session_state.nm_annual_tax,
             step=100.0,
-            key="nm_annual_tax_input",
+            key="nm_annual_tax",
         )
-        st.session_state.nm_annual_tax = tax
+        st.session_state.nm_monthly_tax = st.session_state.nm_annual_tax / 12
 
     # Insurance section with toggle
     is_monthly_ins = st.toggle(
         "Annual/Monthly",
-        value=st.session_state.nm_is_monthly_tax,
-        key="nm_is_monthly_ins_input"
+        value=st.session_state.nm_is_monthly_ins,
+        key="nm_is_monthly_ins"
     )
 
     if is_monthly_ins:
@@ -204,20 +191,18 @@ with col3:
             min_value=0.0,
             value=st.session_state.nm_monthly_ins,
             step=10.0,
-            key="nm_monthly_ins_input",
+            key="nm_monthly_ins",
         )
-        st.session_state.nm_monthly_ins = monthly_ins
-        insurance = monthly_ins * 12  # Convert to annual for consistency
+        st.session_state.nm_annual_ins = st.session_state.nm_monthly_ins * 12
     else:
         insurance = st.number_input(
             "**Annual Insurance ($)**",
             min_value=0.0,
             value=st.session_state.nm_annual_ins,
             step=100.0,
-            key="nm_annual_ins_input",
+            key="nm_annual_ins",
         )
-        st.session_state.nm_annual_ins = insurance
-
+        st.session_state.nm_monthly_ins = st.session_state.nm_annual_ins / 12
 
 NewMort = NewMortgageScenario(
     _rate=st.session_state.nm_rate,
@@ -245,11 +230,11 @@ with mid:
     st.header("&ensp;:green[**Mortgage Calculations**]")
 
 
-loan_col, payment_col = st.columns([6,6])
+loan_col, payment_col, ann = st.columns([4,4,4])
 
 with loan_col: 
 
-    st.subheader("**&ensp;&ensp;&ensp;&ensp;&ensp;Loan Metrics:**",divider="green")
+    st.subheader("**Loan Metrics:**",divider="green")
 
     st.metric(
         "**Loan Amount Today:**",
@@ -277,7 +262,7 @@ with loan_col:
 
 with payment_col:
 
-    st.subheader("**&ensp;&ensp;&ensp;&ensp;&ensp;Payment Metrics:**",divider="green")
+    st.subheader("**Pmt Metrics:**",divider="green")
 
     st.metric(
         "**Total Monthly Payment:**",
@@ -289,10 +274,103 @@ with payment_col:
         value=f"${NewMort.monthly_pmi:,.2f}"
     )
     
+    st.write("")
+
     st.metric(
         "**Months of PMI payments:**",
         value=f"{NewMort.pmi_periods_remaining()}"
     )
+
+with ann:
+
+    st.subheader("**Other:**",divider="green")
+
+    if is_monthly_tax:
+        st.metric(
+            "**Annual Tax Amount ($)**",
+            value=f"${NewMort.tax:,.2f}"
+        )
+
+    if is_monthly_ins:
+        st.metric(
+            "**Annual Ins Amount ($)**",
+            value=f"${NewMort.ins:,.2f}"
+        )
+    
+    if not is_not_percent:
+        st.metric(
+            "**Downpayment Amount ($):**",
+            value=f"${NewMort.downpayment_amount:,.2f}"
+        )
+
+
+
+
+# else:
+
+#     loan_col, payment_col, dpm = st.columns([4,4,4])
+
+#     with loan_col: 
+
+#         st.subheader("**Loan Metrics:**",divider="green")
+
+#         st.metric(
+#             "**Loan Amount Today:**",
+#             value=f"${NewMort.loan_amount:,.2f}"
+#         )
+
+#         st.metric(
+#             "**Value in 5 Years (3% annual growth):**",
+#             value=f"${NewMort.estimate_value_at_year(5):,.2f}",
+#             delta=F"${(NewMort.estimate_value_at_year(5) - NewMort.price):,.2f}",
+#             delta_color="normal"
+#         )
+
+#         st.metric(
+#             "**Value in 10 Years (3% annual growth):**",
+#             value=f"${NewMort.estimate_value_at_year(10):,.2f}",
+#             delta=F"${(NewMort.estimate_value_at_year(10) - NewMort.price):,.2f}",
+#             delta_color="normal"
+#         )
+
+#         # st.write(f"#### **Loan Amount**: :green[${NewMort.loan_amount:,.2f}]")
+#         # st.write(
+#         #     f"#### **Principal & Interest**: :green[${NewMort.principal_and_interest:,.2f}]"
+#         # )
+
+#     with payment_col:
+
+#         st.subheader("**Pmt Metrics:**",divider="green")
+
+#         st.metric(
+#             "**Total Monthly Payment:**",
+#             value=f"${NewMort.total_pmt:,.2f}"
+#         )
+
+#         st.metric(
+#             "**Estimated Monthly PMI:**",
+#             value=f"${NewMort.monthly_pmi:,.2f}"
+#         )
+        
+#         st.write("")
+
+#         st.metric(
+#             "**Months of PMI payments:**",
+#             value=f"{NewMort.pmi_periods_remaining()}"
+#         )
+    
+#     with dpm:
+
+#         st.subheader("**Downpayment:**",divider="green")
+        
+#         st.metric(
+#             "**Downpayment Amount ($):**",
+#             value=f"${NewMort.downpayment_amount:,.2f}"
+#         )
+    
+
+
+
 
     # st.write(f"#### **Expected PMI**: :green[${NewMort.monthly_pmi:,.2f}]")
     # st.write(f"#### **Total Monthly Payment**: :green[${NewMort.total_pmt:,.2f}]")
