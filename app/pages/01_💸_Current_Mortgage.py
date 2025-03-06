@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from datetime import datetime 
 
 import streamlit as st
 
@@ -82,6 +83,7 @@ with col1:
     rate = st.number_input(
         "**Interest Rate (%)**",
         min_value=0.0001,
+        value=st.session_state.get("cm_rate",0.0001),
         step=0.005,
         format="%0.3f",
         key="cm_rate",
@@ -91,6 +93,7 @@ with col1:
     balance = st.number_input(
         "**Current Loan Balance ($)**",
         min_value=0.0001,
+        value=st.session_state.get("cm_balance",0.0001),
         step=1000.0,
         key="cm_balance",
     )
@@ -99,6 +102,7 @@ with col1:
     origin = st.number_input(
         "**Original Loan Amount ($)**",
         min_value=0.0001,
+        value=st.session_state.get("cm_origin",0.0001),
         step=1000.0,
         key="cm_origin",
     )
@@ -106,6 +110,7 @@ with col1:
 
     start_date = st.date_input(
         "**Loan Start Date**",
+        value=st.session_state.get("cm_start_date",datetime.now()),
         key="cm_start_date"
     )
     
@@ -117,7 +122,8 @@ with col2:
 
     sqft = st.number_input(
         "**Square Footage**", 
-        min_value=0.0001, 
+        min_value=0.0001,
+        value=st.session_state.get("cm_sqft",0.0001), 
         step=100.0, 
         key="cm_sqft"
     )
@@ -126,6 +132,7 @@ with col2:
     ppsqft = st.number_input(
         "**Price per Sqft ($)**", 
         min_value=0.0001,
+        value=st.session_state.get("cm_ppsqft",0.0001), 
         step=1.0, 
         key="cm_ppsqft"
     )
@@ -133,21 +140,24 @@ with col2:
 
     pmt = st.number_input(
         "**Total Monthly PMT ($)**", 
-        min_value=0.0001, 
+        min_value=0.0001,
+        value=st.session_state.get("cm_pmt",0.0001), 
         step=50.0, 
         key="cm_pmt"
     )
 
     pmi = st.number_input(
         "**Current Monthly PMI ($)**", 
-        min_value=0.0001, 
+        min_value=0.0001,
+        value=st.session_state.get("cm_pmi",0.0001), 
         step=10.0, 
         key="cm_pmi"
     )
 
     term = st.number_input(
         "**Loan Term (years)**", 
-        min_value=1, 
+        min_value=1,
+        value=st.session_state.get("cm_term",1),  
         key="cm_term"
     )
     
@@ -161,6 +171,7 @@ with col3:
 
     is_monthly_tax = tax_col1.toggle(
         "Annual/Monthly",
+        value=st.session_state.get("cm_is_monthly_tax",False),
         key="cm_is_monthly_tax"
     )
 
@@ -168,6 +179,7 @@ with col3:
         monthly_tax = tax_col2.number_input(
             "**Monthly Tax ($)**",
             min_value=0.0001,
+            value=st.session_state.get("cm_tax_monthly",0.0001),
             step=10.0,
             key="cm_tax_monthly",
         )
@@ -176,6 +188,7 @@ with col3:
         annual_tax = tax_col2.number_input(
             "**Annual Tax ($)**",
             min_value=0.0001,
+            value=st.session_state.get("cm_tax_annual",0.0001),
             step=10.0,
             key="cm_tax_annual",
         )
@@ -186,7 +199,8 @@ with col3:
     ins_col1, ins_col2 = st.columns([9, 8])
 
     is_monthly_ins = ins_col1.toggle(
-        "Annual/Monthly", 
+        "Annual/Monthly",
+        value=st.session_state.get("cm_is_monthly_ins",False), 
         key="cm_is_monthly_ins"
     )
 
@@ -194,6 +208,7 @@ with col3:
         monthly_ins = ins_col2.number_input(
             "**Monthly Insurance ($)**",
             min_value=0.0001,
+            value=st.session_state.get("cm_ins_monthly",0.0001),
             step=10.0,
             key="cm_ins_monthly",
         )
@@ -202,6 +217,7 @@ with col3:
         annual_ins = ins_col2.number_input(
             "**Annual Insurance ($)**",
             min_value=0.0001,
+            value=st.session_state.get("cm_ins_annual",0.0001),
             step=100.0,
             key="cm_ins_annual",
         )
@@ -211,6 +227,7 @@ with col3:
     prin = st.number_input(
         "**Extra Monthly Principal ($)**",
         min_value=0.0,
+        value=st.session_state.get("cm_prin",0.0),
         step=100.0,
         key="cm_prin",
     )
@@ -218,26 +235,10 @@ with col3:
     prepay = st.number_input(
         "**Number of Prepay Periods (months)**",
         min_value=0,
+        value=st.session_state.get("cm_prepay",0),
         step=1,
         key="cm_prepay",
     )
-
-# # inputs get saved into CurrentMortgage class for later comparison
-# currentMort = CurrentMortgage(
-#     _rate=rate,
-#     _years=term,
-#     _tax=annual_tax,
-#     _ins=annual_ins,
-#     _sqft=sqft,
-#     _extra_principal=prin,
-#     _prepay_periods=prepay,
-#     _original_loan=origin,
-#     _loan_amount=balance,
-#     _start_date=start_date.strftime("%m/%d/%Y"),
-#     _price_per_sqft=ppsqft,
-#     _monthly_pmi=pmi,
-#     _total_pmt=pmt
-# )
 
 ###########################################################
 

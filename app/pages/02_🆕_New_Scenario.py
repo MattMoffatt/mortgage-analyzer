@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import streamlit as st
+from datetime import datetime
 
 # Add the parent directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -97,6 +98,7 @@ with new:
             "**Interest Rate (%)**",
             min_value=0.0001,
             step=0.005,
+            value=st.session_state.get("nm_rate",0.0001),
             format="%0.3f",
             key="nm_rate",
         )
@@ -104,12 +106,14 @@ with new:
         price = st.number_input(
             "**House Price ($)**",
             min_value=0.0001,
+            value=st.session_state.get("nm_price",0.0001),
             step=1000.0,
             key="nm_price",
         )
         st.write("")
         start_date = st.date_input(
             "**Loan Start Date**",
+            value=st.session_state.get("nm_start_date",datetime.now()),
             key="nm_start_date"
         )
 
@@ -123,21 +127,24 @@ with new:
 
         sqft = st.number_input(
             "**Square Footage**", 
-            min_value=0.0001, 
+            min_value=0.0001,
+            value=st.session_state.get("nm_sqft",0.0001), 
             step=100.0, 
             key="nm_sqft"
         )
 
         term = st.number_input(
             "**Loan Term (years)**", 
-            min_value=1, 
+            min_value=1,
+            value=st.session_state.get("nm_term",1), 
             key="nm_term"
         )
 
         # Additional payment details
         prin = st.number_input(
             "**Extra Monthly Principal ($)**",
-            min_value=0.0001,
+            min_value=0.0,
+            value=st.session_state.get("nm_prin",0.0),
             step=100.0,
             key="nm_prin",
         )
@@ -145,6 +152,7 @@ with new:
         prepay = st.number_input(
             "**Number of Prepay Periods (months)**",
             min_value=0,
+            value=st.session_state.get("nm_prepay",0),
             step=1,
             key="nm_prepay",
         )
@@ -154,7 +162,8 @@ with new:
     with col3:
 
         is_not_percent = st.toggle(
-            "% / $", 
+            "% / $",
+            value=st.session_state.get("nm_is_not_percent",False),
             key="nm_is_not_percent"
         )
 
@@ -162,6 +171,7 @@ with new:
             downpayment = st.number_input(
                 "**Downpayment Amount ($)**",
                 min_value=0.0001,
+                value=st.session_state.get("nm_downpayment",0.0001),
                 step=1000.0,
                 key="nm_downpayment",
             )
@@ -169,6 +179,7 @@ with new:
             downpayment_percent = st.number_input(
                 "**Downpayment (%)**",
                 min_value=0.0001,
+                value=st.session_state.get("nm_downpayment_percent",0.0001),
                 step=1.0,
                 key="nm_downpayment_percent"
             )
@@ -176,7 +187,8 @@ with new:
 
         # Tax section with toggle
         is_monthly_tax = st.toggle(
-            "Annual/Monthly", 
+            "Annual/Monthly",
+            value=st.session_state.get("nm_is_monthly_tax",False), 
             key="nm_is_monthly_tax"
         )
 
@@ -184,6 +196,7 @@ with new:
             monthly_tax = st.number_input(
                 "**Monthly Tax ($)**",
                 min_value=0.0001,
+                value=st.session_state.get("nm_monthly_tax",0.0001),
                 step=10.0,
                 key="nm_monthly_tax",
             )
@@ -192,6 +205,7 @@ with new:
             tax = st.number_input(
                 "**Annual Tax ($)**",
                 min_value=0.0001,
+                value=st.session_state.get("nm_annual_tax",0.0001),
                 step=100.0,
                 key="nm_annual_tax",
             )
@@ -200,6 +214,7 @@ with new:
         # Insurance section with toggle
         is_monthly_ins = st.toggle(
             "Annual/Monthly",
+            value=st.session_state.get("nm_is_monthly_ins",False), 
             key="nm_is_monthly_ins"
         )
 
@@ -207,6 +222,7 @@ with new:
             monthly_ins = st.number_input(
                 "**Monthly Insurance ($)**",
                 min_value=0.0001,
+                value=st.session_state.get("nm_monthly_ins",0.0001),
                 step=10.0,
                 key="nm_monthly_ins",
             )
@@ -215,6 +231,7 @@ with new:
             insurance = st.number_input(
                 "**Annual Insurance ($)**",
                 min_value=0.0001,
+                value=st.session_state.get("nm_annual_ins",0.0001),
                 step=100.0,
                 key="nm_annual_ins",
             )
@@ -481,4 +498,8 @@ with new:
             except NameError:
                 st.warning("Please click Calculate to update the metrics.")
                 st.stop()
+
+with refinance:
+
+    st.info("Coming soon to an app near you 👨🏽‍💻")
 
