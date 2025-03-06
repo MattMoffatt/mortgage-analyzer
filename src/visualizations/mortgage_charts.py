@@ -440,7 +440,7 @@ def create_mortgage_comparison_dashboard(current_mortgage, new_mortgage):
 def create_single_mortgage_payment_breakdown(mortgage):
     """
     Creates a pie chart showing the breakdown of a single mortgage's monthly payment.
-    Uses Streamlit's native pie chart for simplicity.
+    Uses matplotlib's pie chart via st.pyplot with dark theme styling.
     
     Args:
         mortgage: Either CurrentMortgage or NewMortgageScenario object
@@ -461,25 +461,75 @@ def create_single_mortgage_payment_breakdown(mortgage):
     if mortgage.extra_principal > 0:
         payment_data["Extra Principal"] = mortgage.extra_principal
     
-    # Display the pie chart
+    # Display the pie chart using matplotlib
     st.subheader("Monthly Payment Breakdown")
     
     # Calculate percentages for display
     total = sum(payment_data.values())
-    payment_data_with_pct = {f"{k}: ${v:.2f} ({v/total*100:.1f}%)": v for k, v in payment_data.items()}
     
-    # Show chart
-    st.pie_chart(payment_data_with_pct)
+    # Create the pie chart with matplotlib
+    plt.style.use('dark_background')  # Set dark theme
+    fig, ax = plt.subplots(figsize=(8, 8), facecolor='#0E1117')  # Match Streamlit's dark background
     
-    # Show total
+    # Define vibrant colors that stand out on dark background
+    colors = ["#8A2BE2", "#00CED1", "#FF6347", "#32CD32", "#FFD700"]
+    
+    # Create labels with values and percentages
+    labels = [f"{k}: ${v:.2f} ({v/total*100:.1f}%)" for k, v in payment_data.items()]
+    
+    # Create the pie chart
+    wedges, texts = ax.pie(
+        payment_data.values(),
+        labels=None,  # We'll add custom legend instead
+        autopct=None,
+        startangle=90,
+        colors=colors[:len(payment_data)],
+        wedgeprops={'edgecolor': '#1E1E1E'}  # Add dark edge for contrast
+    )
+    
+    # Add a circle at the center to make it look like a donut chart
+    centre_circle = plt.Circle((0, 0), 0.5, fc='#0E1117')  # Dark center
+    ax.add_patch(centre_circle)
+    
+    # Equal aspect ratio ensures that pie is drawn as a circle
+    ax.axis('equal')
+    
+    # Add title inside the donut
+    ax.text(0, 0, f"Total\n${total:.2f}", ha='center', va='center', 
+            fontsize=12, fontweight='bold', color='white')  # White text
+    
+    # Add a custom legend with white text
+    legend = ax.legend(
+        wedges,
+        labels,
+        title="Payment Components",
+        loc="center left",
+        bbox_to_anchor=(1, 0, 0.5, 1)
+    )
+    
+    # Style the legend text to be white
+    legend.get_title().set_color('white')
+    for text in legend.get_texts():
+        text.set_color('white')
+    
+    # Style the figure
+    ax.set_facecolor('#0E1117')  # Background color for the plot area
+    
+    # Display the chart
+    st.pyplot(fig)
+    
+    # Reset style for other plots
+    plt.style.use('default')
+    
+    # Show total as a metric
     st.metric("Total Monthly Payment", f"${total:.2f}")
     
     # Display as a table too (for exact values)
     breakdown_df = pd.DataFrame({
-        "Component": list(payment_data.keys()),
         "Amount": list(payment_data.values()),
         "Percentage": [f"{v/total*100:.1f}%" for v in payment_data.values()]
-    })
+    }, index=list(payment_data.keys()))
+    
     st.write("Payment Components:")
     breakdown_df["Amount"] = breakdown_df["Amount"].apply(lambda x: f"${x:.2f}")
     st.table(breakdown_df)
@@ -511,7 +561,8 @@ def create_single_mortgage_amortization_chart(mortgage):
     
     # Group by year for clarity
     yearly_data = schedule.groupby(schedule["month"] // 12)[["principal", "interest"]].sum()
-    yearly_data.index = yearly_data.index.map(lambda x: f"Year {x+1}")
+    # Keep the index numerical (add 1 to make it 1-based rather than 0-based)
+    yearly_data.index = yearly_data.index + 1
     yearly_data.columns = ["Principal", "Interest"]
     
     st.bar_chart(yearly_data)
@@ -524,16 +575,16 @@ def create_single_mortgage_amortization_chart(mortgage):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Total Principal", f"${total_principal:,.2f}")
+        st.metric("Total Principal Paid", f"${total_principal:,.2f}")
     
     with col2:
-        st.metric("Total Interest", f"${total_interest:,.2f}")
+        st.metric("Total Interest Paid", f"${total_interest:,.2f}")
     
     with col3:
         st.metric(
             "Interest to Principal Ratio", 
-            f"{total_interest / total_principal:.2f}",
-            help="For every $1 of principal, you pay this much in interest"
+            f"{total_interest / total_principal:.2f}x",
+            help="For every $1 of principal paid, you will have paid this much in interest"
         )
 
 def create_equity_growth_chart(mortgage, years=30):
@@ -595,7 +646,7 @@ def create_equity_growth_chart(mortgage, years=30):
 def create_interest_principal_ratio_chart(mortgage):
     """
     Creates a horizontal bar chart showing interest vs. principal over the loan term.
-    Uses matplotlib through Streamlit for better customization.
+    Uses matplotlib through Streamlit with dark theme styling.
     
     Args:
         mortgage: Either CurrentMortgage or NewMortgageScenario object
@@ -608,8 +659,11 @@ def create_interest_principal_ratio_chart(mortgage):
     total_principal = mortgage.loan_amount
     total_paid = total_interest + total_principal
     
+    # Set dark theme
+    plt.style.use('dark_background')
+    
     # Create matplotlib figure
-    fig, ax = plt.subplots(figsize=(10, 4))
+    fig, ax = plt.subplots(figsize=(10, 4), facecolor='#0E1117')
     
     # Create horizontal bars
     y_pos = [0, 1]
@@ -631,25 +685,37 @@ def create_interest_principal_ratio_chart(mortgage):
     
     # Set chart properties
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(labels)
-    ax.set_xlabel('Amount ($)')
-    ax.set_title(f'Total Principal vs. Interest Paid Over Loan Term (${total_paid:,.2f})')
+    ax.set_yticklabels(labels, color='white')
+    ax.set_xlabel('Amount ($)', color='white')
+    ax.set_title(f'Total Principal vs. Interest Paid Over Loan Term (${total_paid:,.2f})', 
+                 color='white', fontsize=14)
     ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: f'${int(x):,}'))
+    
+    # Customize grid and background
+    ax.set_facecolor('#0E1117')  # Dark background
+    ax.tick_params(colors='white')  # White tick labels
+    ax.spines['bottom'].set_color('#666666')
+    ax.spines['top'].set_color('#666666')
+    ax.spines['right'].set_color('#666666')
+    ax.spines['left'].set_color('#666666')
     
     # Display in Streamlit
     st.pyplot(fig)
     
+    # Reset style for other plots
+    plt.style.use('default')
+    
     # Show interest to principal ratio
     st.metric(
         "Interest to Principal Ratio", 
-        f"{total_interest / total_principal:.2f}",
-        help="For every $1 of principal, you pay this much in interest"
+        f"{total_interest / total_principal:.2f}x",
+        help="For every $1 of principal paid, you will have paid this much in interest"
     )
 
 def create_mortgage_timeline_chart(mortgage):
     """
     Creates a timeline showing key milestones in the mortgage.
-    Uses matplotlib through Streamlit for better customization.
+    Uses matplotlib through Streamlit with dark theme styling.
     
     Args:
         mortgage: Either CurrentMortgage or NewMortgageScenario object
@@ -722,8 +788,11 @@ def create_mortgage_timeline_chart(mortgage):
     # Sort by date
     df = df.sort_values("Date")
     
+    # Set dark theme
+    plt.style.use('dark_background')
+    
     # Create matplotlib figure
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(10, 5), facecolor='#0E1117')
     
     # Plot each milestone
     colors = {
@@ -733,16 +802,16 @@ def create_mortgage_timeline_chart(mortgage):
         "Loan Payoff": "#4682B4"      # Steel blue
     }
     
-    # Create the timeline
-    ax.plot([0, df["Year"].max()], [0, 0], 'k-', alpha=0.3)
+    # Create the timeline - use slightly brighter line color for visibility
+    ax.plot([0, df["Year"].max()], [0, 0], color='#888888', alpha=0.5, linewidth=2)
     
     # Add each milestone
     for i, row in df.iterrows():
-        color = colors.get(row["Event"], "#333333")
+        color = colors.get(row["Event"], "#CCCCCC")  # Brighter default color
         ax.plot([row["Year"], row["Year"]], [-0.1, 0.1], color=color, linewidth=2)
         ax.plot(row["Year"], 0, 'o', markersize=10, color=color)
         
-        # Add label and description
+        # Add label and description with white text
         ax.annotate(
             f"{row['Event']}\n{row['Date'].strftime('%m/%d/%Y')}\n{row['Description']}",
             xy=(row["Year"], 0),
@@ -756,8 +825,8 @@ def create_mortgage_timeline_chart(mortgage):
     # Set chart properties
     ax.set_ylim(-0.5, 1.0)
     ax.set_xlim(-0.5, df["Year"].max() + 0.5)
-    ax.set_title('Mortgage Timeline Milestones')
-    ax.set_xlabel('Years')
+    ax.set_title('Mortgage Timeline Milestones', color='white', fontsize=14)
+    ax.set_xlabel('Years', color='white')
     
     # Hide y-axis
     ax.get_yaxis().set_visible(False)
@@ -766,9 +835,19 @@ def create_mortgage_timeline_chart(mortgage):
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_color('#666666')
+    
+    # Set background color
+    ax.set_facecolor('#0E1117')
+    
+    # Add tick marks in white
+    ax.tick_params(axis='x', colors='white')
     
     # Display in Streamlit
     st.pyplot(fig)
+    
+    # Reset style for other plots
+    plt.style.use('default')
     
     # Add text explanation
     st.write("Key milestone dates:")

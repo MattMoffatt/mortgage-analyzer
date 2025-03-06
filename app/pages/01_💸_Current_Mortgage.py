@@ -14,6 +14,16 @@ from src.utils.mortgage_utils import update_current_mortgage
 
 ###########################################################
 
+# restore widget values
+
+###########################################################
+
+from src.utils.mortgage_utils import restore_current_mortgage_widget_values
+
+restore_current_mortgage_widget_values()
+
+###########################################################
+
 # Set session and navigation functionality
 # Needed for persisting data across pages
 

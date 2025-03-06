@@ -694,3 +694,12 @@ class NewMortgageScenario(Mortgage):
         start_date = dt.now()
         end_date = start_date + relativedelta(years=self.years)
         return end_date.strftime("%m/%d/%Y")
+
+    @property
+    def closing_costs(self) -> float:
+        return self.price * 0.03
+    
+    @property
+    def initial_investment(self) -> float:
+        return self.downpayment_amount + self.closing_costs
+    
