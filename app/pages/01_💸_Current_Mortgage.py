@@ -14,7 +14,7 @@ from src.utils.mortgage_utils import update_current_mortgage
 
 ###########################################################
 
-# restore widget values
+# restore widget state
 
 ###########################################################
 
