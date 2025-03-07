@@ -2,8 +2,6 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-import pandas as pd
-import altair as alt
 
 # Add the parent directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -13,11 +11,8 @@ from src.utils.navigation_utils import register_page, safe_navigate
 from src.utils.session_utils import initialize_mortgage_app_state
 from src.visualizations.mortgage_charts import (
     create_monthly_payment_comparison,
-    create_amortization_comparison,
     create_equity_buildup_chart,
     create_interest_paid_comparison,
-    create_loan_term_comparison,
-    create_breakeven_chart,
     create_mortgage_comparison_dashboard
 )
 
