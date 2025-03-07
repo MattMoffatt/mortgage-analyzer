@@ -44,13 +44,13 @@ if "new_mortgage" not in st.session_state:
 
 with col1:
     if st.button("💸 Current Mortgage", key="home_to_current_mortgage"):
-        safe_navigate("01_💸_Current_Mortgage.py")
+        safe_navigate("pages/01_💸_Current_Mortgage.py")
     
     if st.button("🆕 New Scenario", key="home_to_new_mortgage"):
-        safe_navigate("02_🆕_New_Scenario.py")
+        safe_navigate("pages/02_🆕_New_Scenario.py")
     
     if st.button("📈 Comparison", key="home_to_comparison"):
-        safe_navigate("03_📈_Comparison.py")
+        safe_navigate("pages/03_📈_Comparison.py")
 
 with col2:
     st.write("input your current mortgage details")

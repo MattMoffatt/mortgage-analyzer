@@ -39,7 +39,7 @@ register_page("comparison_page", None)
 
 ###############################################################
 
-st.header("&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;:chart_with_upwards_trend:&ensp;&ensp;&ensp;:blue[**Mortgage Comparison**]&ensp;&ensp;&ensp;:chart_with_upwards_trend:", divider="grey")
+st.header("&ensp;&ensp;&ensp;&ensp;&ensp;:chart_with_upwards_trend:&ensp;&ensp;&ensp;:blue[**Mortgage Comparison**]&ensp;&ensp;&ensp;:chart_with_upwards_trend:", divider="grey")
 
 left, center, right = st.columns([6,18,6])
 
@@ -76,7 +76,7 @@ newMort = st.session_state.new_mortgage
 
 ###############################################################
 
-st.subheader("Key Metrics Comparison", divider="blue")
+st.subheader("Key Decision Factors", divider="blue")
 
 # Get comparison data
 comparison_df = create_mortgage_comparison_dashboard(currentMort, newMort)
@@ -90,7 +90,7 @@ with col1:
     monthly_diff_text = "Increase" if monthly_diff > 0 else "Savings"
     
     st.metric(
-        "Monthly Payment Comparison",
+        "New Monthly Payment",
         f"${newMort.total_pmt:,.2f}",
         f"{monthly_diff_text}: ${abs(monthly_diff):,.2f}",
         delta_color="inverse"
@@ -101,7 +101,7 @@ with col1:
     interest_diff_text = "Higher" if interest_diff > 0 else "Lower"
     
     st.metric(
-        "Interest Rate",
+        "New Interest Rate",
         f"{newMort.rate:.3f}%",
         f"{interest_diff_text} by {abs(interest_diff):.3f}%",
         delta_color="inverse"
@@ -114,14 +114,14 @@ with col2:
     equity_diff = equity_new - equity_current
     
     st.metric(
-        "Property Value",
+        "New Property Value",
         f"${newMort.price:,.2f}",
         f"${newMort.price - currentMort.price:,.2f} difference",
         delta_color="normal"
     )
     
     st.metric(
-        "Equity Position",
+        "New Equity Position",
         f"${equity_new:,.2f}",
         f"${equity_diff:,.2f} difference",
         delta_color="normal"
@@ -134,21 +134,21 @@ with col3:
     term_diff_text = "Longer" if term_diff > 0 else "Shorter"
     
     st.metric(
-        "Loan Term Remaining",
-        f"{newMort.periods_remaining / 12:.1f} years",
-        f"{term_diff_text} by {abs(term_diff):.1f} years",
-        delta_color="off"  # Neutral color as longer/shorter isn't inherently good/bad
+        "Total Initial Investment",
+        f"${newMort.initial_investment:,.2f}"
     )
     
     # PMI comparison
     pmi_diff = newMort.monthly_pmi - currentMort.monthly_pmi
     pmi_diff_text = "Higher" if pmi_diff > 0 else "Lower"
     
+    st.write("")
+
     st.metric(
-        "Monthly PMI",
+        "New Monthly PMI",
         f"${newMort.monthly_pmi:,.2f}",
         f"{pmi_diff_text} by ${abs(pmi_diff):,.2f}",
-        delta_color="inverse"
+        delta_color="normal"
     )
 
 # Show detailed metric table with expandable section
@@ -189,17 +189,19 @@ st.subheader("Visual Comparisons", divider="blue")
 # Create tabs for different visualization categories
 tab1, tab2, tab3 = st.tabs(["Monthly Payments", "Loan Balance & Equity", "Interest & Term"])
 
+with tab1:
+
+    create_monthly_payment_comparison(currentMort, newMort)
+
+    # st.info("""
+    # These ccomparisons:
+    # - **Loan Balance**: Shows how quickly you'll pay down each loan
+    # - **Equity Growth**: Includes both loan paydown and estimated 3% annual property appreciation
+    # """)
 with tab2:
-    # Two-column layout for related charts
-    col1, col2 = st.columns(2)
     
-    with col1:
-        st.subheader("Loan Balance Over Time")
-        st.altair_chart(create_amortization_comparison(currentMort, newMort), use_container_width=True)
-    
-    with col2:
-        st.subheader("Equity Growth Over Time")
-        st.altair_chart(create_equity_buildup_chart(currentMort, newMort), use_container_width=True)
+    st.subheader("Equity Growth Over Time")
+    create_equity_buildup_chart(currentMort,newMort)
     
     st.info("""
     These charts show how your loan balance decreases and your equity increases over time:
@@ -208,16 +210,10 @@ with tab2:
     """)
 
 with tab3:
-    # Two-column layout for related charts
-    col1, col2 = st.columns(2)
     
-    with col1:
-        st.subheader("Total Interest Comparison")
-        st.altair_chart(create_interest_paid_comparison(currentMort, newMort), use_container_width=True)
-    
-    with col2:
-        st.subheader("Loan Term Comparison")
-        st.altair_chart(create_loan_term_comparison(currentMort, newMort), use_container_width=True)
+
+    st.subheader("Total Interest Comparison")
+    create_interest_paid_comparison(currentMort, newMort)
     
     st.info("""
     These charts compare the overall cost and duration of each mortgage:

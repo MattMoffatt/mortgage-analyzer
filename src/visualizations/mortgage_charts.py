@@ -21,49 +21,127 @@ from src.models.mortgage_classes import CurrentMortgage, NewMortgageScenario
 def create_monthly_payment_comparison(current_mortgage, new_mortgage):
     """
     Creates a bar chart comparing the monthly payments of both mortgages.
-    Uses Streamlit's native bar chart for simplicity.
+    Uses Matplotlib for more control over styling with a dark theme.
     
     Args:
         current_mortgage (CurrentMortgage): Current mortgage object
         new_mortgage (NewMortgageScenario): New mortgage scenario object
     """
-    # Create DataFrame for the chart
-    data = pd.DataFrame({
-        "Current": [
-            current_mortgage.principal_and_interest,
-            current_mortgage.monthly_tax,
-            current_mortgage.monthly_ins,
-            current_mortgage.monthly_pmi,
-            current_mortgage.extra_principal,
-            current_mortgage.total_pmt
-        ],
-        "New": [
-            new_mortgage.principal_and_interest,
-            new_mortgage.monthly_tax,
-            new_mortgage.monthly_ins,
-            new_mortgage.monthly_pmi,
-            new_mortgage.extra_principal,
-            new_mortgage.total_pmt
-        ]
-    }, index=[
-        "Principal & Interest", 
-        "Taxes", 
-        "Insurance", 
-        "PMI", 
-        "Extra Principal", 
-        "Total Payment"
-    ])
+    # Prepare the data
+    categories = ["Principal & Interest", "Taxes", "Insurance", "PMI", "Extra Principal", "Total Payment"]
+    current_values = [
+        current_mortgage.principal_and_interest,
+        current_mortgage.monthly_tax,
+        current_mortgage.monthly_ins,
+        current_mortgage.monthly_pmi,
+        current_mortgage.extra_principal,
+        current_mortgage.total_pmt
+    ]
+    new_values = [
+        new_mortgage.principal_and_interest,
+        new_mortgage.monthly_tax,
+        new_mortgage.monthly_ins,
+        new_mortgage.monthly_pmi,
+        new_mortgage.extra_principal,
+        new_mortgage.total_pmt
+    ]
     
-    # Display chart
-    st.subheader("Monthly Payment Comparison")
-    st.bar_chart(data)
+    # Set up the matplotlib figure with dark theme
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(12, 6), facecolor='#0E1117')
+    ax.set_facecolor('#0E1117')
+    
+    # Define bar positions
+    x = np.arange(len(categories))
+    width = 0.35
+    
+    # Create the bars
+    rects1 = ax.bar(x - width/2, current_values, width, label='Current', color='#87CEFA')  # Light blue
+    rects2 = ax.bar(x + width/2, new_values, width, label='New', color='#1E90FF')   # Darker blue
+    
+    # Add labels, title and custom x-axis tick labels
+    ax.set_xlabel('Payment Components', color='white', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Amount ($)', color='white', fontsize=14, fontweight='bold')
+    ax.set_title('Monthly Payment Comparison', color='white', fontsize=18, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories, rotation=45, ha='right', color='white', fontsize=12)
+    
+    # Make y-axis ticks larger and bolder
+    ax.tick_params(axis='y', colors='white', labelsize=12)
+    
+    # Add horizontal gridlines only
+    ax.grid(axis='y', linestyle='--', alpha=0.4, color='#888888')
+    
+    # Add value labels on top of bars - make them larger and with shadow effect for visibility
+    def add_labels(rects):
+        for rect in rects:
+            height = rect.get_height()
+            # Add a slight shadow/outline effect for better visibility
+            for xoffset, yoffset in [(-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5)]:
+                ax.annotate(f'${height:,.0f}',
+                            xy=(rect.get_x() + rect.get_width() / 2, height),
+                            xytext=(xoffset, 3 + yoffset),
+                            textcoords="offset points",
+                            ha='center', va='bottom',
+                            color='black', fontsize=11, alpha=0.7)
+            
+            # Main label
+            ax.annotate(f'${height:,.0f}',
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        color='white', fontsize=11, fontweight='bold')
+    
+    add_labels(rects1)
+    add_labels(rects2)
+    
+    # Format y-axis as currency
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: f'${int(x):,}'))
+    
+    # Remove all spines (borders)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    
+    # Add a legend with border - make it larger and more visible
+    legend = ax.legend(framealpha=0.9, facecolor='#0E1117', edgecolor='#888888', 
+                       labelcolor='white', fontsize=12, frameon=True)
+    
+    # Adjust layout
+    fig.tight_layout()
+    
+    # Display the chart
+    st.pyplot(fig)
+    
+    # Calculate differences
+    differences = [n - c for n, c in zip(new_values, current_values)]
     
     # Add a descriptive table for exact values
     st.write("Monthly Payment Breakdown (exact values):")
-    formatted_data = data.copy()
-    for col in formatted_data.columns:
-        formatted_data[col] = formatted_data[col].apply(lambda x: f"${x:,.2f}")
-    st.table(formatted_data)
+    
+    # Create table data
+    table_data = pd.DataFrame({
+        "Component": categories,
+        "Current": [f"${v:,.2f}" for v in current_values],
+        "New": [f"${v:,.2f}" for v in new_values],
+    })
+    
+    # Add formatted differences with indicators
+    indicators = []
+    for diff in differences:
+        if diff > 0:
+            indicator = "‼️"  # For increases
+        elif diff < 0:
+            indicator = "✅"  # For decreases
+        else:
+            indicator = "😐"  # For no change
+        
+        indicators.append(f"${diff:,.2f} {indicator}")
+    
+    table_data["Difference"] = indicators
+    
+    # Display the table
+    st.table(table_data)
 
 def create_amortization_comparison(current_mortgage, new_mortgage):
     """
@@ -85,19 +163,23 @@ def create_amortization_comparison(current_mortgage, new_mortgage):
     # Make sure we have same length if possible
     max_years = max(current_schedule["Year"].max(), new_schedule["Year"].max())
     
-    # Create the comparison dataframe
-    comparison_df = pd.DataFrame(index=np.arange(0, max_years + 0.1, 0.1))
+    # Create the comparison dataframe with fixed points
+    years = np.arange(0, max_years + 0.1, 0.1)
+    comparison_df = pd.DataFrame(index=years)
     
-    # Add current mortgage data
-    current_data = current_schedule.set_index("Year")["balance"]
+    # Handle duplicates by aggregating (taking the last value for each Year)
+    current_data = current_schedule.groupby("Year")["balance"].last()
+    new_data = new_schedule.groupby("Year")["balance"].last()
+    
+    # Reindex to match our comparison dataframe's index
+    current_data = current_data.reindex(years, method='ffill')
+    new_data = new_data.reindex(years, method='ffill')
+    
+    # Add the data to the comparison dataframe
     comparison_df["Current Mortgage"] = current_data
-    
-    # Add new mortgage data
-    new_data = new_schedule.set_index("Year")["balance"]
     comparison_df["New Mortgage"] = new_data
     
     # Display chart
-    st.subheader("Loan Balance Over Time")
     st.line_chart(comparison_df)
     
     # Show key details

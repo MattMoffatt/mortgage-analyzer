@@ -83,7 +83,7 @@ with col1:
     rate = st.number_input(
         "**Interest Rate (%)**",
         min_value=0.0001,
-        value=st.session_state.get("cm_rate",0.0001),
+        value=st.session_state.get("cm_rate") if "nm_rate" in st.session_state else 0.001,
         step=0.005,
         format="%0.3f",
         key="cm_rate",
@@ -348,6 +348,11 @@ if st.session_state.show_current_mortgage_calcs:
                 value=f"{currentMort.periods_remaining}"
             )
 
+            st.metric(
+                "**PMI Periods Remaining:**",
+                value=f"{currentMort.pmi_periods_remaining()}"
+            )
+
         # Save to session state for use in other pages
         st.session_state["current_mortgage"] = currentMort
 
@@ -358,3 +363,5 @@ if st.session_state.show_current_mortgage_calcs:
     except NameError:
         st.warning("Please click Calculate to update the metrics.")
         st.stop()
+
+st.write(st.session_state)
