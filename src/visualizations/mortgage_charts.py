@@ -243,10 +243,12 @@ def create_interest_paid_comparison(current_mortgage, new_mortgage):
     # Calculate total interest for current mortgage
     current_schedule = current_mortgage.amortization_schedule()
     current_total_interest = current_schedule["interest"].sum()
+    current_total_principal = current_mortgage.loan_amount
     
     # Calculate total interest for new mortgage
     new_schedule = new_mortgage.amortization_schedule()
     new_total_interest = new_schedule["interest"].sum()
+    new_total_principal = new_mortgage.loan_amount
     
     # Create DataFrame for the chart
     data = pd.DataFrame({
@@ -259,17 +261,55 @@ def create_interest_paid_comparison(current_mortgage, new_mortgage):
     
     # Show exact values and difference
     interest_diff = new_total_interest - current_total_interest
+    interest_diff_perc = (interest_diff - current_total_interest) / current_total_interest * 100
+    interest_string_higher = f"{interest_diff_perc:.2f}% higher"
+    interest_string_lower = f"{interest_diff_perc:.2f}% lower"
     
+    interest_delta = interest_string_higher if interest_diff > 0 else interest_string_lower
+
+    interest_diff_postive_string = f"+${abs(interest_diff):,.2f}"
+    interest_diff_negative_string = f"-${abs(interest_diff):,.2f}"
+
+    current_ratio = current_total_interest / current_total_principal
+    new_ratio = new_total_interest / new_total_principal
+    ratio_diff = new_ratio - current_ratio
+    ratio_diff_perc = ratio_diff / current_ratio * 100
+    ratio_string_higher = f"{ratio_diff_perc:.2f}% higher"
+    ratio_string_lower = f"{ratio_diff_perc:.2f}% lower"
+
+    ratio_delta = ratio_string_higher if ratio_diff > 0 else ratio_string_lower
+
+    ratio_diff_postive_string = f"+{abs(ratio_diff):.2f}x"
+    ratio_diff_negative_string = f"-{abs(ratio_diff):.2f}x"
+
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Current Mortgage Interest", f"${current_total_interest:,.2f}")
+        st.write("")
+        st.metric(
+        "Current Interest to Principal Ratio", 
+        f"{current_ratio:.2f}x",
+        help="For every $1 of principal paid, you will have paid this much in interest"
+        )
     with col2:
         st.metric("New Mortgage Interest", f"${new_total_interest:,.2f}")
+        st.write("")
+        st.metric(
+        "New Interest to Principal Ratio", 
+        f"{new_ratio:.2f}x",
+        help="For every $1 of principal paid, you will have paid this much in interest"
+        )
     with col3:
         st.metric(
             "Difference", 
-            f"${abs(interest_diff):,.2f}", 
-            f"{'Higher' if interest_diff > 0 else 'Lower'}", 
+            f"{interest_diff_postive_string if interest_diff > 0 else interest_diff_negative_string}",
+            interest_delta, 
+            delta_color="inverse"
+        )
+        st.metric(
+            "Difference", 
+            f"{ratio_diff_postive_string if ratio_diff > 0 else ratio_diff_negative_string}", 
+            ratio_delta, 
             delta_color="inverse"
         )
 
@@ -716,14 +756,18 @@ def create_equity_growth_chart(mortgage, years=30):
     # Show key milestones
     year_5_equity = mortgage.estimate_equity_at_year(5)
     year_10_equity = mortgage.estimate_equity_at_year(10)
+    year_30_equity = mortgage.estimate_equity_at_year(30)
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric("5-Year Equity", f"${year_5_equity:,.2f}")
     
     with col2:
         st.metric("10-Year Equity", f"${year_10_equity:,.2f}")
+
+    with col3:
+        st.metric("30-Year Equity", f"${year_30_equity:,.2f}")
     
 def create_interest_principal_ratio_chart(mortgage):
     """
@@ -879,7 +923,7 @@ def create_mortgage_timeline_chart(mortgage):
     # Plot each milestone
     colors = {
         "Loan Start": "#32CD32",      # Green
-        "50% Paid Off": "#8A2BE2",    # Purple
+        "50% Paid Off": "#a22be2",    # Purple
         "PMI Removal": "#FF6347",     # Red-orange
         "Loan Payoff": "#4682B4"      # Steel blue
     }

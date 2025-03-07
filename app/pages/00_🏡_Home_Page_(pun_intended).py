@@ -19,6 +19,25 @@ initialize_mortgage_app_state()
 # Register this as the home page (without an update function since there's nothing to save)
 register_page("home_page", None)
 
+###############################################################
+
+# Hide Sidebar
+
+###############################################################
+
+# # Hide the default sidebar
+# st.markdown("""
+# <style>
+#     [data-testid="collapsedControl"] {
+#         display: none
+#     }
+    
+#     section[data-testid="stSidebar"] {
+#         display: none;
+#     }
+# </style>
+# """, unsafe_allow_html=True)
+
 
 ###############################################################
 

@@ -70,6 +70,19 @@ def safe_navigate(page_path: str):
         if update_function:
             try:
                 update_function()
+                
+                # IMPORTANT ADDITION: After update function runs, disconnect widgets from session state
+                # by effectively copying each value in place
+                if current_page == "current_mortgage" and "current_mortgage_widget_values" in st.session_state:
+                    for key in st.session_state.current_mortgage_widget_values:
+                        if key in st.session_state:
+                            st.session_state[key] = st.session_state[key]
+                            
+                elif current_page == "new_mortgage" and "new_mortgage_widget_values" in st.session_state:
+                    for key in st.session_state.new_mortgage_widget_values:
+                        if key in st.session_state:
+                            st.session_state[key] = st.session_state[key]
+                            
             except Exception as e:
                 st.error(f"Error updating page data: {e}")
     

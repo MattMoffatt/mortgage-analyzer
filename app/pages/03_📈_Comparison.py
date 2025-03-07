@@ -182,7 +182,7 @@ with st.expander("View Detailed Metrics Comparison"):
 st.subheader("Visual Comparisons", divider="blue")
 
 # Create tabs for different visualization categories
-tab1, tab2, tab3 = st.tabs(["Monthly Payments", "Loan Balance & Equity", "Interest & Term"])
+tab1, tab2, tab3 = st.tabs(["Monthly Payments", "Equity Growth Projections", "Interest Analysis"])
 
 with tab1:
 
@@ -195,25 +195,22 @@ with tab1:
     # """)
 with tab2:
     
-    st.subheader("Equity Growth Over Time")
     create_equity_buildup_chart(currentMort,newMort)
     
     st.info("""
-    These charts show how your loan balance decreases and your equity increases over time:
-    - **Loan Balance**: Shows how quickly you'll pay down each loan
+    This chart shows how much your equity will increase over time:
     - **Equity Growth**: Includes both loan paydown and estimated 3% annual property appreciation
+            * currently no support for changing this assumption
     """)
 
 with tab3:
     
-
-    st.subheader("Total Interest Comparison")
     create_interest_paid_comparison(currentMort, newMort)
     
     st.info("""
-    These charts compare the overall cost and duration of each mortgage:
+    These chart compares the total interest you will pay on each mortgage:
     - **Total Interest**: The total interest paid over the life of each loan
-    - **Loan Term**: How long until each loan is paid off
+    - **Interest to Principal Ratio**: How much interest you will pay for each $1 of principal paid
     """)
 
 # with tab4:
