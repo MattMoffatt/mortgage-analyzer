@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import streamlit as st
+from datetime import datetime
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -144,3 +145,152 @@ def restore_new_mortgage_widget_values():
         # Dynamically update all saved widget values
         for key, value in widget_values.items():
             st.session_state[key] = value
+
+def current_mortgage_persistent_storage():
+
+    # Initialize permanent storage if not already present
+    if "cm_data" not in st.session_state:
+        st.session_state.cm_data = {
+            "rate": 4.5,
+            "balance": 200000.0,
+            "origin": 250000.0,
+            "start_date": datetime.now(),  # Default to today
+            "sqft": 2000.0,
+            "ppsqft": 150.0,
+            "pmt": 1500.0,
+            "pmi": 100.0,
+            "term": 30,
+            "is_monthly_tax": False,
+            "tax_annual": 2400.0,
+            "tax_monthly": 200.0,
+            "is_monthly_ins": False,
+            "ins_annual": 1200.0,
+            "ins_monthly": 100.0,
+            "prin": 0.0,
+            "prepay": 0
+        }
+
+    # Set temporary widget keys with values from permanent storage
+    for key, value in st.session_state.cm_data.items():
+        widget_key = f"temp_cm_{key}"
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = value
+
+    # Always explicitly set toggle states to ensure they persist
+    st.session_state["temp_cm_is_monthly_tax"] = st.session_state.cm_data["is_monthly_tax"]
+    st.session_state["temp_cm_is_monthly_ins"] = st.session_state.cm_data["is_monthly_ins"]
+
+
+def new_mortgage_persistent_storage():
+
+    if "nm_data" not in st.session_state:
+        st.session_state.nm_data = {
+            "rate": 4.5,
+            "price": 300000.0,
+            "start_date": datetime.now(),  # Default to today
+            "sqft": 2000.0,
+            "term": 30,
+            "prin": 0.0,
+            "prepay": 0,
+            "is_not_percent": False,
+            "downpayment": 60000.0,
+            "downpayment_percent": 20.0,
+            "is_monthly_tax": False,
+            "annual_tax": 3000.0,
+            "monthly_tax": 250.0,
+            "is_monthly_ins": False,
+            "annual_ins": 1200.0,
+            "monthly_ins": 100.0
+        }
+
+    # Set temporary widget keys with values from permanent storage
+    for key, value in st.session_state.nm_data.items():
+        widget_key = f"temp_nm_{key}"
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = value
+
+    # Always explicitly set toggle states to ensure they persist
+    st.session_state["temp_nm_is_not_percent"] = st.session_state.nm_data["is_not_percent"]
+    st.session_state["temp_nm_is_monthly_tax"] = st.session_state.nm_data["is_monthly_tax"]
+    st.session_state["temp_nm_is_monthly_ins"] = st.session_state.nm_data["is_monthly_ins"]
+
+    # Ensure all related values are initialized
+    if "temp_nm_downpayment" not in st.session_state:
+        st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
+    if "temp_nm_downpayment_percent" not in st.session_state:
+        st.session_state["temp_nm_downpayment_percent"] = st.session_state.nm_data["downpayment_percent"]
+    if "temp_nm_monthly_tax" not in st.session_state:
+        st.session_state["temp_nm_monthly_tax"] = st.session_state.nm_data["monthly_tax"]
+    if "temp_nm_annual_tax" not in st.session_state:
+        st.session_state["temp_nm_annual_tax"] = st.session_state.nm_data["annual_tax"]
+    if "temp_nm_monthly_ins" not in st.session_state:
+        st.session_state["temp_nm_monthly_ins"] = st.session_state.nm_data["monthly_ins"]
+    if "temp_nm_annual_ins" not in st.session_state:
+        st.session_state["temp_nm_annual_ins"] = st.session_state.nm_data["annual_ins"]
+
+def current_mortgage_run_calcs():
+    for key in st.session_state.cm_data.keys():
+        temp_key = f"temp_cm_{key}"
+        if temp_key in st.session_state:
+            st.session_state.cm_data[key] = st.session_state[temp_key]
+
+    # Format the date properly
+    if isinstance(st.session_state.cm_data['start_date'], datetime):
+        start_date_formatted = st.session_state.cm_data['start_date'].strftime("%m/%d/%Y")
+    else:
+        start_date_formatted = st.session_state.cm_data['start_date'].strftime("%m/%d/%Y")
+
+    # Call the update function directly to create the mortgage object
+    currentMort = CurrentMortgage(
+        _rate=st.session_state.cm_data['rate'],
+        _years=st.session_state.cm_data['term'],
+        _tax=st.session_state.cm_data['tax_annual'],
+        _ins=st.session_state.cm_data['ins_annual'],
+        _sqft=st.session_state.cm_data['sqft'],
+        _extra_principal=st.session_state.cm_data['prin'],
+        _prepay_periods=st.session_state.cm_data['prepay'],
+        _original_loan=st.session_state.cm_data['origin'],
+        _loan_amount=st.session_state.cm_data['balance'],
+        _start_date=start_date_formatted,
+        _price_per_sqft=st.session_state.cm_data['ppsqft'],
+        _monthly_pmi=st.session_state.cm_data['pmi'],
+        _total_pmt=st.session_state.cm_data['pmt']
+    )
+    
+    if currentMort is not None:
+        # Set the flag to show calculations
+        st.session_state.show_current_mortgage_calcs = True
+        # Store the mortgage object in session state
+        st.session_state.current_mortgage = currentMort
+
+def new_mortgage_run_calcs():
+    for key in st.session_state.nm_data.keys():
+        temp_key = f"temp_nm_{key}"
+        if temp_key in st.session_state:
+            st.session_state.nm_data[key] = st.session_state[temp_key]
+            
+    # Force recalculate downpayment based on percentage if using percentage mode
+    if not st.session_state.nm_data["is_not_percent"]:
+        st.session_state.nm_data["downpayment"] = (st.session_state.nm_data["downpayment_percent"] / 100) * st.session_state.nm_data["price"]
+        # Also update temp value for display
+        st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
+    
+    # Create mortgage object from permanent storage
+    NewMort = NewMortgageScenario(
+        _rate=st.session_state.nm_data["rate"],
+        _years=st.session_state.nm_data["term"],
+        _tax=st.session_state.nm_data["annual_tax"],
+        _ins=st.session_state.nm_data["annual_ins"],
+        _sqft=st.session_state.nm_data["sqft"],
+        _extra_principal=st.session_state.nm_data["prin"],
+        _prepay_periods=st.session_state.nm_data["prepay"],
+        _price=st.session_state.nm_data["price"],
+        _downpayment_amount=st.session_state.nm_data["downpayment"]
+    )
+    
+    if NewMort is not None:
+        # Set the flag to show calculations
+        st.session_state.show_new_mortgage_calcs = True
+        # Store the mortgage object in session state
+        st.session_state.new_mortgage = NewMort
+

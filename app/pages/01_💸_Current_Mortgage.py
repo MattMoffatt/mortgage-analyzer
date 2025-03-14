@@ -1,17 +1,14 @@
 import sys
 from pathlib import Path
-from datetime import datetime 
 
 import streamlit as st
 
 # Add the parent directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from src.models.mortgage_classes import CurrentMortgage
-
 # Import your utility functions
 from src.utils.navigation_utils import register_page, safe_navigate
-from src.utils.mortgage_utils import update_current_mortgage
+from src.utils.mortgage_utils import update_current_mortgage, current_mortgage_persistent_storage, current_mortgage_run_calcs
 
 # Import your visualization functions
 from src.visualizations.mortgage_charts import (
@@ -27,37 +24,7 @@ from src.visualizations.mortgage_charts import (
 
 ###########################################################
 
-# Initialize permanent storage if not already present
-if "cm_data" not in st.session_state:
-    st.session_state.cm_data = {
-        "rate": 4.5,
-        "balance": 200000.0,
-        "origin": 250000.0,
-        "start_date": datetime.now(),  # Default to today
-        "sqft": 2000.0,
-        "ppsqft": 150.0,
-        "pmt": 1500.0,
-        "pmi": 100.0,
-        "term": 30,
-        "is_monthly_tax": False,
-        "tax_annual": 2400.0,
-        "tax_monthly": 200.0,
-        "is_monthly_ins": False,
-        "ins_annual": 1200.0,
-        "ins_monthly": 100.0,
-        "prin": 0.0,
-        "prepay": 0
-    }
-
-# Set temporary widget keys with values from permanent storage
-for key, value in st.session_state.cm_data.items():
-    widget_key = f"temp_cm_{key}"
-    if widget_key not in st.session_state:
-        st.session_state[widget_key] = value
-
-# Always explicitly set toggle states to ensure they persist
-st.session_state["temp_cm_is_monthly_tax"] = st.session_state.cm_data["is_monthly_tax"]
-st.session_state["temp_cm_is_monthly_ins"] = st.session_state.cm_data["is_monthly_ins"]
+current_mortgage_persistent_storage()
 
 ###########################################################
 
@@ -94,12 +61,12 @@ with center:
     
 ###########################################################
 
-# Helper functions
+# Helper functions - only used in this script so not defined in util files
 
 ###########################################################
 
 def update_cm_data(field):
-    """Update permanent storage from temporary widget state"""
+    # Update permanent storage from temporary widget state
     st.session_state.cm_data[field] = st.session_state[f"temp_cm_{field}"]
 
 def update_tax_values(source):
@@ -108,12 +75,14 @@ def update_tax_values(source):
         # User changed monthly value, update annual
         st.session_state.cm_data["tax_monthly"] = st.session_state["temp_cm_tax_monthly"]
         st.session_state.cm_data["tax_annual"] = st.session_state.cm_data["tax_monthly"] * 12
+
         # Update the temporary value as well
         st.session_state["temp_cm_tax_annual"] = st.session_state.cm_data["tax_annual"]
     else:
         # User changed annual value, update monthly
         st.session_state.cm_data["tax_annual"] = st.session_state["temp_cm_tax_annual"]
         st.session_state.cm_data["tax_monthly"] = st.session_state.cm_data["tax_annual"] / 12
+
         # Update the temporary value as well
         st.session_state["temp_cm_tax_monthly"] = st.session_state.cm_data["tax_monthly"]
 
@@ -123,12 +92,14 @@ def update_insurance_values(source):
         # User changed monthly value, update annual
         st.session_state.cm_data["ins_monthly"] = st.session_state["temp_cm_ins_monthly"]
         st.session_state.cm_data["ins_annual"] = st.session_state.cm_data["ins_monthly"] * 12
+
         # Update the temporary value as well
         st.session_state["temp_cm_ins_annual"] = st.session_state.cm_data["ins_annual"]
     else:
         # User changed annual value, update monthly
         st.session_state.cm_data["ins_annual"] = st.session_state["temp_cm_ins_annual"]
         st.session_state.cm_data["ins_monthly"] = st.session_state.cm_data["ins_annual"] / 12
+
         # Update the temporary value as well
         st.session_state["temp_cm_ins_monthly"] = st.session_state.cm_data["ins_monthly"]
 
@@ -142,7 +113,6 @@ col1, buff1, col2, buff2, col3 = st.columns([5, 0.5, 5, 0.5, 9]) # split into th
 
 # Left column
 with col1:
-    # add white space to push down visuals
     st.write("")
 
     rate = st.number_input(
@@ -178,7 +148,6 @@ with col1:
     
 # middle column
 with col2:
-    # add white space to push down visuals
     st.write("")
 
     sqft = st.number_input(
@@ -222,10 +191,8 @@ with col2:
     
 # right column
 with col3:
-    # add white space to push down visuals
     st.write("")
 
-    # Tax section with toggle
     tax_col1, tax_col2 = st.columns([9, 8])
 
     is_monthly_tax = tax_col1.toggle(
@@ -257,7 +224,6 @@ with col3:
         monthly_tax = st.session_state["temp_cm_tax_annual"] / 12
         st.session_state.cm_data["tax_monthly"] = monthly_tax
 
-    # Insurance section with toggle
     ins_col1, ins_col2 = st.columns([9, 8])
 
     is_monthly_ins = ins_col1.toggle(
@@ -321,44 +287,20 @@ with calc_col2:
         st.session_state.show_current_mortgage_calcs = False
         
     if st.button("**Calculate**", key="calculate_current_mortgage"):
-        # Update all data from temp widgets to permanent storage
-        for key in st.session_state.cm_data.keys():
-            temp_key = f"temp_cm_{key}"
-            if temp_key in st.session_state:
-                st.session_state.cm_data[key] = st.session_state[temp_key]
+        """
+        1. update all data from temp widgets to permanent storage
+        2. run any necessary calculations
+        3. store variables in CurrentMortgage class
+        4. activate session_state.show_current_mortgage_calcs
+        """
+        current_mortgage_run_calcs()
 
-        # Format the date properly
-        if isinstance(st.session_state.cm_data['start_date'], datetime):
-            start_date_formatted = st.session_state.cm_data['start_date'].strftime("%m/%d/%Y")
-        else:
-            start_date_formatted = st.session_state.cm_data['start_date'].strftime("%m/%d/%Y")
-
-        # Call the update function directly to create the mortgage object
-        currentMort = CurrentMortgage(
-            _rate=st.session_state.cm_data['rate'],
-            _years=st.session_state.cm_data['term'],
-            _tax=st.session_state.cm_data['tax_annual'],
-            _ins=st.session_state.cm_data['ins_annual'],
-            _sqft=st.session_state.cm_data['sqft'],
-            _extra_principal=st.session_state.cm_data['prin'],
-            _prepay_periods=st.session_state.cm_data['prepay'],
-            _original_loan=st.session_state.cm_data['origin'],
-            _loan_amount=st.session_state.cm_data['balance'],
-            _start_date=start_date_formatted,
-            _price_per_sqft=st.session_state.cm_data['ppsqft'],
-            _monthly_pmi=st.session_state.cm_data['pmi'],
-            _total_pmt=st.session_state.cm_data['pmt']
-        )
-        
-        if currentMort is not None:
-            # Set the flag to show calculations
-            st.session_state.show_current_mortgage_calcs = True
-            # Store the mortgage object in session state
-            st.session_state.current_mortgage = currentMort
+#####################################################################################
+# tabbed metrics vs visualizations
+#####################################################################################
 
 metrics, amort, growth, interest_breakdown, timeline = st.tabs(["Calculations","Amortization","Equity Growth","Interest Analysis","Mortgage Timeline"])
 
-# Rest of the code for tabs remains unchanged
 with metrics:
     if st.session_state.show_current_mortgage_calcs:
         try:
@@ -422,7 +364,6 @@ with metrics:
             st.warning("Please click Calculate to update the metrics.")
             st.stop()
 
-# The rest of your code for other tabs remains unchanged...
 with amort:
     if st.session_state.show_current_mortgage_calcs:
         try:

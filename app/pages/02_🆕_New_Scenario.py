@@ -2,16 +2,14 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-from datetime import datetime
 
 # Add the parent directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from src.models.mortgage_classes import NewMortgageScenario
 
 # Import your utility functions
 from src.utils.navigation_utils import register_page, safe_navigate
-from src.utils.mortgage_utils import update_new_mortgage
+from src.utils.mortgage_utils import update_new_mortgage, new_mortgage_persistent_storage, new_mortgage_run_calcs
 
 # Import your visualization functions
 from src.visualizations.mortgage_charts import (
@@ -28,50 +26,7 @@ from src.visualizations.mortgage_charts import (
 
 ###########################################################
 
-if "nm_data" not in st.session_state:
-    st.session_state.nm_data = {
-        "rate": 4.5,
-        "price": 300000.0,
-        "start_date": datetime.now(),  # Default to today
-        "sqft": 2000.0,
-        "term": 30,
-        "prin": 0.0,
-        "prepay": 0,
-        "is_not_percent": False,
-        "downpayment": 60000.0,
-        "downpayment_percent": 20.0,
-        "is_monthly_tax": False,
-        "annual_tax": 3000.0,
-        "monthly_tax": 250.0,
-        "is_monthly_ins": False,
-        "annual_ins": 1200.0,
-        "monthly_ins": 100.0
-    }
-
-# Set temporary widget keys with values from permanent storage
-for key, value in st.session_state.nm_data.items():
-    widget_key = f"temp_nm_{key}"
-    if widget_key not in st.session_state:
-        st.session_state[widget_key] = value
-
-# Always explicitly set toggle states to ensure they persist
-st.session_state["temp_nm_is_not_percent"] = st.session_state.nm_data["is_not_percent"]
-st.session_state["temp_nm_is_monthly_tax"] = st.session_state.nm_data["is_monthly_tax"]
-st.session_state["temp_nm_is_monthly_ins"] = st.session_state.nm_data["is_monthly_ins"]
-
-# Ensure all related values are initialized
-if "temp_nm_downpayment" not in st.session_state:
-    st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
-if "temp_nm_downpayment_percent" not in st.session_state:
-    st.session_state["temp_nm_downpayment_percent"] = st.session_state.nm_data["downpayment_percent"]
-if "temp_nm_monthly_tax" not in st.session_state:
-    st.session_state["temp_nm_monthly_tax"] = st.session_state.nm_data["monthly_tax"]
-if "temp_nm_annual_tax" not in st.session_state:
-    st.session_state["temp_nm_annual_tax"] = st.session_state.nm_data["annual_tax"]
-if "temp_nm_monthly_ins" not in st.session_state:
-    st.session_state["temp_nm_monthly_ins"] = st.session_state.nm_data["monthly_ins"]
-if "temp_nm_annual_ins" not in st.session_state:
-    st.session_state["temp_nm_annual_ins"] = st.session_state.nm_data["annual_ins"]
+new_mortgage_persistent_storage()
 
 ###########################################################
 
@@ -108,32 +63,35 @@ with center:
 
 ###########################################################
 
-# Helper functions
+# Helper functions - only used in this script so not defined in util files
 
 ###########################################################
 
 def update_nm_data(field):
-    """Update permanent storage from temporary widget state"""
+    # Update permanent storage from temporary widget state
     st.session_state.nm_data[field] = st.session_state[f"temp_nm_{field}"]
 
 def update_downpayment_values(source):
-    """Update downpayment values based on source"""
+    # Update downpayment values based on source
     if source == "amount":
         # User changed amount, update percentage
         st.session_state.nm_data["downpayment"] = st.session_state["temp_nm_downpayment"]
         if st.session_state.nm_data["price"] > 0:
             st.session_state.nm_data["downpayment_percent"] = (st.session_state.nm_data["downpayment"] / st.session_state.nm_data["price"]) * 100
             st.session_state["temp_nm_downpayment_percent"] = st.session_state.nm_data["downpayment_percent"]
+
     elif source == "percent":
         # User changed percentage, update amount
         st.session_state.nm_data["downpayment_percent"] = st.session_state["temp_nm_downpayment_percent"]
         st.session_state.nm_data["downpayment"] = (st.session_state.nm_data["downpayment_percent"] / 100) * st.session_state.nm_data["price"]
         st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
+
     elif source == "price":
         # Price changed, update amount based on percentage
         if not st.session_state.nm_data["is_not_percent"]:
             st.session_state.nm_data["downpayment"] = (st.session_state.nm_data["downpayment_percent"] / 100) * st.session_state.nm_data["price"]
             st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
+
     elif source == "toggle":
         # Toggle changed, update appropriate values
         if st.session_state.nm_data["is_not_percent"]:
@@ -146,19 +104,23 @@ def update_downpayment_values(source):
                 st.session_state["temp_nm_downpayment_percent"] = st.session_state.nm_data["downpayment_percent"]
 
 def update_nm_tax_values(source):
-    """Update both annual and monthly tax values based on source"""
+    # Update both annual and monthly tax values based on source
     if source == "monthly":
         # User changed monthly value, update annual
         st.session_state.nm_data["monthly_tax"] = st.session_state["temp_nm_monthly_tax"]
         st.session_state.nm_data["annual_tax"] = st.session_state.nm_data["monthly_tax"] * 12
+
         # Update the temporary value as well
         st.session_state["temp_nm_annual_tax"] = st.session_state.nm_data["annual_tax"]
+
     elif source == "annual":
         # User changed annual value, update monthly
         st.session_state.nm_data["annual_tax"] = st.session_state["temp_nm_annual_tax"]
         st.session_state.nm_data["monthly_tax"] = st.session_state.nm_data["annual_tax"] / 12
+
         # Update the temporary value as well
         st.session_state["temp_nm_monthly_tax"] = st.session_state.nm_data["monthly_tax"]
+
     elif source == "toggle":
         # Toggle changed, ensure both values are synced
         if st.session_state.nm_data["is_monthly_tax"]:
@@ -169,24 +131,29 @@ def update_nm_tax_values(source):
             st.session_state["temp_nm_annual_tax"] = st.session_state.nm_data["annual_tax"]
 
 def update_nm_insurance_values(source):
-    """Update both annual and monthly insurance values based on source"""
+    # Update both annual and monthly insurance values based on source
     if source == "monthly":
         # User changed monthly value, update annual
         st.session_state.nm_data["monthly_ins"] = st.session_state["temp_nm_monthly_ins"]
         st.session_state.nm_data["annual_ins"] = st.session_state.nm_data["monthly_ins"] * 12
+
         # Update the temporary value as well
         st.session_state["temp_nm_annual_ins"] = st.session_state.nm_data["annual_ins"]
+
     elif source == "annual":
         # User changed annual value, update monthly
         st.session_state.nm_data["annual_ins"] = st.session_state["temp_nm_annual_ins"]
         st.session_state.nm_data["monthly_ins"] = st.session_state.nm_data["annual_ins"] / 12
+
         # Update the temporary value as well
         st.session_state["temp_nm_monthly_ins"] = st.session_state.nm_data["monthly_ins"]
+
     elif source == "toggle":
         # Toggle changed, ensure both values are synced
         if st.session_state.nm_data["is_monthly_ins"]:
             # Switched to monthly view, make sure monthly value is set
             st.session_state["temp_nm_monthly_ins"] = st.session_state.nm_data["monthly_ins"]
+
         else:
             # Switched to annual view, make sure annual value is set
             st.session_state["temp_nm_annual_ins"] = st.session_state.nm_data["annual_ins"]
@@ -302,7 +269,6 @@ with new:
             st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
             downpayment = st.session_state.nm_data["downpayment"]
 
-        # Tax section with toggle
         is_monthly_tax = st.toggle(
             "Annual/Monthly",
             key="temp_nm_is_monthly_tax",
@@ -336,7 +302,6 @@ with new:
             st.session_state["temp_nm_monthly_tax"] = st.session_state.nm_data["monthly_tax"]
             monthly_tax = st.session_state.nm_data["monthly_tax"]
 
-        # Insurance section with toggle
         is_monthly_ins = st.toggle(
             "Annual/Monthly",
             key="temp_nm_is_monthly_ins",
@@ -383,36 +348,13 @@ with new:
             st.session_state.show_new_mortgage_calcs = False
 
         if st.button("**Calculate**", key="calculate_new_mortgage"):
-            # Update all data from temp widgets to permanent storage
-            for key in st.session_state.nm_data.keys():
-                temp_key = f"temp_nm_{key}"
-                if temp_key in st.session_state:
-                    st.session_state.nm_data[key] = st.session_state[temp_key]
-            
-            # Force recalculate downpayment based on percentage if using percentage mode
-            if not st.session_state.nm_data["is_not_percent"]:
-                st.session_state.nm_data["downpayment"] = (st.session_state.nm_data["downpayment_percent"] / 100) * st.session_state.nm_data["price"]
-                # Also update temp value for display
-                st.session_state["temp_nm_downpayment"] = st.session_state.nm_data["downpayment"]
-            
-            # Create mortgage object from permanent storage
-            NewMort = NewMortgageScenario(
-                _rate=st.session_state.nm_data["rate"],
-                _years=st.session_state.nm_data["term"],
-                _tax=st.session_state.nm_data["annual_tax"],
-                _ins=st.session_state.nm_data["annual_ins"],
-                _sqft=st.session_state.nm_data["sqft"],
-                _extra_principal=st.session_state.nm_data["prin"],
-                _prepay_periods=st.session_state.nm_data["prepay"],
-                _price=st.session_state.nm_data["price"],
-                _downpayment_amount=st.session_state.nm_data["downpayment"]
-            )
-            
-            if NewMort is not None:
-                # Set the flag to show calculations
-                st.session_state.show_new_mortgage_calcs = True
-                # Store the mortgage object in session state
-                st.session_state.new_mortgage = NewMort
+            """
+            1. update all data from temp widgets to permanent storage
+            2. run any necessary calculations
+            3. store variables in CurrentMortgage class
+            4. activate session_state.show_new_mortgage_calcs
+            """
+            new_mortgage_run_calcs()
 
     #####################################################################################
     # tabbed metrics vs visualizations
