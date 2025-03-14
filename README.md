@@ -31,6 +31,10 @@ Or, in the `mortgage-analyzer/` directory run
 streamlit run app/home_page.py
 ```
 
+This will open the app in a webpage on an available local host
+
+4. To quit the app from the terminal, hit 'Ctrl + C' or just exit the webpage and close the terminal
+
 ## Directory Structure
 
 ```
