@@ -287,12 +287,12 @@ with calc_col2:
         st.session_state.show_current_mortgage_calcs = False
         
     if st.button("**Calculate**", key="calculate_current_mortgage"):
-        """
-        1. update all data from temp widgets to permanent storage
-        2. run any necessary calculations
-        3. store variables in CurrentMortgage class
-        4. activate session_state.show_current_mortgage_calcs
-        """
+
+        # 1. update all data from temp widgets to permanent storage
+        # 2. run any necessary calculations
+        # 3. store variables in CurrentMortgage class
+        # 4. activate session_state.show_current_mortgage_calcs
+
         current_mortgage_run_calcs()
 
 #####################################################################################

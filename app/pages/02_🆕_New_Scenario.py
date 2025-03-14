@@ -348,12 +348,12 @@ with new:
             st.session_state.show_new_mortgage_calcs = False
 
         if st.button("**Calculate**", key="calculate_new_mortgage"):
-            """
-            1. update all data from temp widgets to permanent storage
-            2. run any necessary calculations
-            3. store variables in CurrentMortgage class
-            4. activate session_state.show_new_mortgage_calcs
-            """
+
+            # 1. update all data from temp widgets to permanent storage
+            # 2. run any necessary calculations
+            # 3. store variables in CurrentMortgage class
+            # 4. activate session_state.show_new_mortgage_calcs
+
             new_mortgage_run_calcs()
 
     #####################################################################################
