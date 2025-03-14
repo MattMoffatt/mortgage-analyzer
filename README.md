@@ -19,11 +19,14 @@ and streamlit better and I had no desire to also spend the time to learn how to 
 ```bash
 pip install -r requirements.txt
 ```
-3. Either navigate into the `app/` directory and run 
+3. Either navigate into the `app/` directory and run in your terminal
+
 ```bash
 streamlit run home_page.py
 ```
+
 Or, in the `mortgage-analyzer/` directory run
+
 ```bash
 streamlit run app/home_page.py
 ```
@@ -33,20 +36,20 @@ streamlit run app/home_page.py
 ```
 mortgage-analyzer/
 ├── src/                 
-│   ├── models/                     # Data models and business logic
+│   ├── models/                     
 │   │   └── mortgage_classes.py     # Core mortgage calculation classes
-│   ├── utils/                      # Utility functions and helpers
+│   ├── utils/                      
 |   |   ├── mortgage_utils.py       # Helper functions for the current and new mortgage pages
 |   |   ├── navigation_utils.py     # Helper functions for page navigation functionality
 │   │   └── session_utils.py        # Helper functions for general session state handling
-│   └── visualizations/             # Chart generation and data visualization
+│   └── visualizations/             
 │       └── mortgage_charts.py      # Chart building functions - solely coded by Claude AI
 ├── app/                 
 │   ├── pages/                      # Individual pages of the multi-page app
-│   │   ├── 01_current_mortgage.py  # Input current mortgage details and run calculations
-│   │   ├── 02_new_scenarios.py     # Input new mortgage details and run calculations (refi options will be added later)
-│   │   └── 03_comparison.py        # Visualize comparisons between the current mortgage and new mortgage
-│   └── main.py                     # Application entry point
+│   │   ├── 01_💸_Current_Mortgage.py  # Input current mortgage details and run calculations
+│   │   ├── 02_🆕_New_Scenario.py      # Input new mortgage details and run calculations (refi options will be added later)
+│   │   └── 03_📈_Comparison.py        # Visualize comparisons between the current mortgage and new mortgage
+│   └── home_page.py                # Application entry point
 ├── requirements.txt                # Project dependencies
 └── README.md                       # Project documentation
 ```
