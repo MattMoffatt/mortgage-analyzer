@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ```bash
 streamlit run home_page.py
 ```
-    Or, in the `mortgage-analyzer/` directory run
+Or, in the `mortgage-analyzer/` directory run
 ```bash
 streamlit run app/home_page.py
 ```
