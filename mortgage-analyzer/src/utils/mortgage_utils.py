@@ -5,7 +5,7 @@ from datetime import datetime
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.models.mortgage_classes import CurrentMortgage, NewMortgageScenario
+from src.models.mortgage_classes import CurrentMortgage, NewMortgageScenario, RefinanceScenario
 
 def update_current_mortgage():
     """
@@ -293,4 +293,138 @@ def new_mortgage_run_calcs():
         st.session_state.show_new_mortgage_calcs = True
         # Store the mortgage object in session state
         st.session_state.new_mortgage = NewMort
+
+
+def refinance_persistent_storage():
+    """Initialize persistent storage for refinance scenario data"""
+    if "rf_data" not in st.session_state:
+        # Get default values from current mortgage if available
+        current_balance = 200000.0
+        current_value = 300000.0
+        current_sqft = 2000.0
+        current_tax = 3000.0
+        current_ins = 1200.0
+        
+        # Try to get values from current mortgage if it exists
+        if "current_mortgage" in st.session_state and st.session_state.current_mortgage:
+            cm = st.session_state.current_mortgage
+            current_balance = cm.loan_amount
+            current_value = cm.price
+            current_sqft = cm.sqft
+            current_tax = cm.tax
+            current_ins = cm.ins
+        
+        st.session_state.rf_data = {
+            "rate": 4.0,  # Typically refinancing for better rate
+            "term": 30,
+            "current_loan_balance": current_balance,
+            "current_property_value": current_value,
+            "cash_out_amount": 0.0,
+            "closing_cost_percentage": 2.5,  # 2.5% default
+            "sqft": current_sqft,
+            "annual_tax": current_tax,
+            "monthly_tax": current_tax / 12,
+            "annual_ins": current_ins,
+            "monthly_ins": current_ins / 12,
+            "is_monthly_tax": False,
+            "is_monthly_ins": False,
+            "prin": 0.0,
+            "prepay": 0
+        }
+
+    # Set temporary widget keys with values from permanent storage
+    for key, value in st.session_state.rf_data.items():
+        widget_key = f"temp_rf_{key}"
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = value
+
+    # Always explicitly set toggle states to ensure they persist
+    st.session_state["temp_rf_is_monthly_tax"] = st.session_state.rf_data["is_monthly_tax"]
+    st.session_state["temp_rf_is_monthly_ins"] = st.session_state.rf_data["is_monthly_ins"]
+
+
+def update_refinance_scenario():
+    """Update the refinance scenario object in session state"""
+    try:
+        # Get tax amount based on toggle state
+        if st.session_state.rf_is_monthly_tax:
+            tax = st.session_state.rf_monthly_tax * 12
+        else:
+            tax = st.session_state.rf_annual_tax
+            
+        # Get insurance amount based on toggle state
+        if st.session_state.rf_is_monthly_ins:
+            insurance = st.session_state.rf_monthly_ins * 12
+        else:
+            insurance = st.session_state.rf_annual_ins
+            
+        # Create the refinance scenario object
+        refinance_scenario = RefinanceScenario(
+            _rate=st.session_state.rf_rate,
+            _years=st.session_state.rf_term,
+            _tax=tax,
+            _ins=insurance,
+            _sqft=st.session_state.rf_sqft,
+            _extra_principal=st.session_state.rf_prin,
+            _prepay_periods=st.session_state.rf_prepay,
+            _current_loan_balance=st.session_state.rf_current_loan_balance,
+            _current_property_value=st.session_state.rf_current_property_value,
+            _cash_out_amount=st.session_state.rf_cash_out_amount,
+            _closing_cost_percentage=st.session_state.rf_closing_cost_percentage / 100
+        )
+        
+        # Save the object to session state
+        st.session_state.refinance_scenario = refinance_scenario
+        
+        # Also save widget values
+        st.session_state.refinance_widget_values = {
+            "rf_is_monthly_tax": st.session_state.rf_is_monthly_tax,
+            "rf_is_monthly_ins": st.session_state.rf_is_monthly_ins,
+            "rf_rate": st.session_state.rf_rate,
+            "rf_term": st.session_state.rf_term,
+            "rf_current_loan_balance": st.session_state.rf_current_loan_balance,
+            "rf_current_property_value": st.session_state.rf_current_property_value,
+            "rf_cash_out_amount": st.session_state.rf_cash_out_amount,
+            "rf_closing_cost_percentage": st.session_state.rf_closing_cost_percentage,
+            "rf_sqft": st.session_state.rf_sqft,
+            "rf_prin": st.session_state.rf_prin,
+            "rf_prepay": st.session_state.rf_prepay,
+            "rf_annual_tax": st.session_state.get("rf_annual_tax", 0),
+            "rf_monthly_tax": st.session_state.get("rf_monthly_tax", 0),
+            "rf_annual_ins": st.session_state.get("rf_annual_ins", 0),
+            "rf_monthly_ins": st.session_state.get("rf_monthly_ins", 0)
+        }
+        
+    except Exception as e:
+        st.error(f"Error updating refinance scenario: {e}")
+
+
+def refinance_run_calcs():
+    """Run calculations for refinance scenario and store in session state"""
+    # Update permanent storage from temporary widgets
+    for key in st.session_state.rf_data.keys():
+        temp_key = f"temp_rf_{key}"
+        if temp_key in st.session_state:
+            st.session_state.rf_data[key] = st.session_state[temp_key]
+    
+    # Create refinance scenario object
+    RefinanceScen = RefinanceScenario(
+        _rate=st.session_state.rf_data["rate"],
+        _years=st.session_state.rf_data["term"],
+        _tax=st.session_state.rf_data["annual_tax"],
+        _ins=st.session_state.rf_data["annual_ins"],
+        _sqft=st.session_state.rf_data["sqft"],
+        _extra_principal=st.session_state.rf_data["prin"],
+        _prepay_periods=st.session_state.rf_data["prepay"],
+        _current_loan_balance=st.session_state.rf_data["current_loan_balance"],
+        _current_property_value=st.session_state.rf_data["current_property_value"],
+        _cash_out_amount=st.session_state.rf_data["cash_out_amount"],
+        _closing_cost_percentage=st.session_state.rf_data["closing_cost_percentage"] / 100
+    )
+    
+    if RefinanceScen is not None:
+        # Set the flag to show calculations
+        st.session_state.show_refinance_calcs = True
+        # Store the scenario object in session state
+        st.session_state.refinance_scenario = RefinanceScen
 

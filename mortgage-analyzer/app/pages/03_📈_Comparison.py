@@ -57,13 +57,44 @@ with center:
 
 ###############################################################
 
-# Check if both mortgage objects exist and are valid
-if not (st.session_state.get("current_mortgage") and st.session_state.get("new_mortgage")):
-    st.warning("Please fill out both current mortgage and new mortgage scenario details before viewing comparisons.")
+# Check if current mortgage exists and at least one scenario is available
+if not st.session_state.get("current_mortgage"):
+    st.warning("Please fill out your current mortgage details first.")
+    st.stop()
+
+# Check if at least one scenario exists
+has_new_mortgage = st.session_state.get("new_mortgage") is not None
+has_refinance = st.session_state.get("refinance_scenario") is not None
+
+if not (has_new_mortgage or has_refinance):
+    st.warning("Please fill out either a new mortgage scenario or refinance scenario before viewing comparisons.")
     st.stop()
 
 currentMort = st.session_state.current_mortgage
-newMort = st.session_state.new_mortgage
+
+# Determine which scenario to compare
+if has_new_mortgage and has_refinance:
+    # Both scenarios exist - let user choose
+    scenario_choice = st.radio(
+        "**Choose scenario to compare with your current mortgage:**",
+        ["New Purchase", "Refinance"],
+        horizontal=True,
+        help="Select which scenario you want to compare against your current mortgage"
+    )
+    
+    if scenario_choice == "New Purchase":
+        newMort = st.session_state.new_mortgage
+        scenario_type = "new_purchase"
+    else:
+        newMort = st.session_state.refinance_scenario
+        scenario_type = "refinance"
+        
+elif has_new_mortgage:
+    newMort = st.session_state.new_mortgage
+    scenario_type = "new_purchase"
+else:
+    newMort = st.session_state.refinance_scenario
+    scenario_type = "refinance"
 
 ###############################################################
 
@@ -105,22 +136,41 @@ with col1:
 # Home value and equity comparison
 with col2:
     equity_current = currentMort.equity_value
-    equity_new = newMort.price - newMort.loan_amount
-    equity_diff = equity_new - equity_current
     
-    st.metric(
-        "New Property Value",
-        f"${newMort.price:,.2f}",
-        f"${newMort.price - currentMort.price:,.2f} difference",
-        delta_color="normal"
-    )
-    
-    st.metric(
-        "New Equity Position",
-        f"${equity_new:,.2f}",
-        f"${equity_diff:,.2f} difference",
-        delta_color="normal"
-    )
+    if scenario_type == "refinance":
+        equity_new = newMort.equity_after_refinance
+        equity_diff = equity_new - equity_current
+        
+        st.metric(
+            "Property Value",
+            f"${newMort.current_property_value:,.2f}",
+            "Same property" if abs(newMort.current_property_value - currentMort.price) < 1000 else f"${newMort.current_property_value - currentMort.price:,.2f} difference",
+            delta_color="normal"
+        )
+        
+        st.metric(
+            "Equity After Refinance",
+            f"${equity_new:,.2f}",
+            f"${equity_diff:,.2f} difference",
+            delta_color="normal" if equity_diff >= 0 else "inverse"
+        )
+    else:
+        equity_new = newMort.price - newMort.loan_amount
+        equity_diff = equity_new - equity_current
+        
+        st.metric(
+            "New Property Value",
+            f"${newMort.price:,.2f}",
+            f"${newMort.price - currentMort.price:,.2f} difference",
+            delta_color="normal"
+        )
+        
+        st.metric(
+            "New Equity Position",
+            f"${equity_new:,.2f}",
+            f"${equity_diff:,.2f} difference",
+            delta_color="normal"
+        )
 
 # Loan details comparison
 with col3:
@@ -128,10 +178,23 @@ with col3:
     term_diff = (newMort.periods_remaining / 12) - (currentMort.periods_remaining / 12)
     term_diff_text = "Longer" if term_diff > 0 else "Shorter"
     
-    st.metric(
-        "Total Initial Investment",
-        f"${newMort.initial_investment:,.2f}"
-    )
+    if scenario_type == "refinance":
+        st.metric(
+            "Closing Costs",
+            f"${newMort.closing_costs:,.2f}",
+            help="Estimated closing costs for refinance"
+        )
+        if hasattr(newMort, 'cash_out_amount') and newMort.cash_out_amount > 0:
+            st.metric(
+                "Net Cash to You",
+                f"${newMort.net_cash_to_borrower:,.2f}",
+                help="Cash you receive after closing costs"
+            )
+    else:
+        st.metric(
+            "Total Initial Investment",
+            f"${newMort.initial_investment:,.2f}"
+        )
     
     # PMI comparison
     pmi_diff = newMort.monthly_pmi - currentMort.monthly_pmi
@@ -283,42 +346,97 @@ st.subheader("Mortgage Recommendation", divider="blue")
 monthly_savings = currentMort.total_pmt - newMort.total_pmt
 interest_rate_diff = currentMort.rate - newMort.rate
 term_diff = (newMort.periods_remaining / 12) - (currentMort.periods_remaining / 12)
-equity_position_change = (newMort.price - newMort.loan_amount) - currentMort.equity_value
 
-# Simple recommendation logic
-if monthly_savings > 0 and interest_rate_diff > 0:
-    recommendation = "✅ **FAVORABLE**: The new mortgage scenario appears favorable. You'll save on monthly payments and have a lower interest rate."
-    details = f"""
-    **Key benefits:**
-    - Monthly savings of ${monthly_savings:.2f}
-    - Interest rate reduction of {interest_rate_diff:.3f}%
-    - {'Increased equity position' if equity_position_change > 0 else 'Consider impact on equity position'}
-    """
-elif monthly_savings > 0 and interest_rate_diff <= 0:
-    recommendation = "⚠️ **POTENTIALLY FAVORABLE**: The new scenario offers monthly savings but not from a rate reduction. Consider the full term cost."
-    details = f"""
-    **Considerations:**
-    - Monthly savings of ${monthly_savings:.2f} may be from a longer term rather than better rate
-    - {'Term extended by' if term_diff > 0 else 'Term reduced by'} {abs(term_diff):.1f} years
-    - Review total interest paid over the life of the loan
-    """
-elif monthly_savings <= 0 and interest_rate_diff > 0:
-    recommendation = "⚠️ **MIXED SCENARIO**: Lower rate but higher monthly payment. May be beneficial for long-term interest savings or building equity faster."
-    details = f"""
-    **Considerations:**
-    - Interest rate reduction of {interest_rate_diff:.3f}%
-    - Higher monthly payment of ${abs(monthly_savings):.2f}
-    - {'Term reduced by' if term_diff < 0 else 'Term extended by'} {abs(term_diff):.1f} years
-    - {'Higher equity position' if equity_position_change > 0 else 'Lower equity position'} of ${abs(equity_position_change):.2f}
-    """
+if scenario_type == "refinance":
+    equity_position_change = newMort.equity_after_refinance - currentMort.equity_value
+    closing_costs = newMort.closing_costs
 else:
-    recommendation = "❌ **NOT RECOMMENDED**: This scenario increases both your monthly payment and interest rate."
-    details = f"""
-    **Concerns:**
-    - Monthly payment increase of ${abs(monthly_savings):.2f}
-    - Interest rate increase of {abs(interest_rate_diff):.3f}%
-    - {'Term extended by' if term_diff > 0 else 'Term reduced by'} {abs(term_diff):.1f} years
-    """
+    equity_position_change = (newMort.price - newMort.loan_amount) - currentMort.equity_value
+    closing_costs = getattr(newMort, 'closing_costs', newMort.price * 0.03)
+
+# Recommendation logic based on scenario type
+if scenario_type == "refinance":
+    # Refinance-specific recommendations
+    if monthly_savings > 0 and interest_rate_diff > 0:
+        # Break-even calculation for refinance
+        break_even_months = closing_costs / monthly_savings if monthly_savings > 0 else float('inf')
+        
+        recommendation = "✅ **FAVORABLE REFINANCE**: This refinance appears beneficial."
+        details = f"""
+        **Key benefits:**
+        - Monthly savings of ${monthly_savings:.2f}
+        - Interest rate reduction of {interest_rate_diff:.3f}%
+        - Break-even point: {break_even_months:.0f} months
+        - {'Maintains' if abs(equity_position_change) < 1000 else 'Changes'} equity position by ${abs(equity_position_change):,.2f}
+        """
+        
+        if hasattr(newMort, 'cash_out_amount') and newMort.cash_out_amount > 0:
+            details += f"\n- Cash-out amount: ${newMort.cash_out_amount:,.2f} (net: ${newMort.net_cash_to_borrower:,.2f})"
+            
+    elif monthly_savings > 0 and interest_rate_diff <= 0:
+        recommendation = "⚠️ **REVIEW CAREFULLY**: Monthly savings without rate improvement may indicate longer term."
+        details = f"""
+        **Considerations:**
+        - Monthly savings of ${monthly_savings:.2f}
+        - {'No rate improvement' if interest_rate_diff == 0 else f'Rate increase of {abs(interest_rate_diff):.3f}%'}
+        - {'Term extended by' if term_diff > 0 else 'Term reduced by'} {abs(term_diff):.1f} years
+        - Closing costs: ${closing_costs:,.2f}
+        """
+        
+    elif monthly_savings <= 0 and interest_rate_diff > 0:
+        recommendation = "⚠️ **MIXED REFINANCE**: Rate improvement but higher payments."
+        details = f"""
+        **Considerations:**
+        - Interest rate reduction of {interest_rate_diff:.3f}%
+        - Higher monthly payment of ${abs(monthly_savings):.2f}
+        - May benefit from faster equity building
+        - Closing costs: ${closing_costs:,.2f}
+        """
+        
+    else:
+        recommendation = "❌ **NOT RECOMMENDED**: This refinance increases both payment and rate."
+        details = f"""
+        **Concerns:**
+        - Monthly payment increase of ${abs(monthly_savings):.2f}
+        - Interest rate increase of {abs(interest_rate_diff):.3f}%
+        - Closing costs: ${closing_costs:,.2f}
+        """
+        
+else:
+    # New purchase recommendations (existing logic)
+    if monthly_savings > 0 and interest_rate_diff > 0:
+        recommendation = "✅ **FAVORABLE**: The new mortgage scenario appears favorable. You'll save on monthly payments and have a lower interest rate."
+        details = f"""
+        **Key benefits:**
+        - Monthly savings of ${monthly_savings:.2f}
+        - Interest rate reduction of {interest_rate_diff:.3f}%
+        - {'Increased equity position' if equity_position_change > 0 else 'Consider impact on equity position'}
+        """
+    elif monthly_savings > 0 and interest_rate_diff <= 0:
+        recommendation = "⚠️ **POTENTIALLY FAVORABLE**: The new scenario offers monthly savings but not from a rate reduction. Consider the full term cost."
+        details = f"""
+        **Considerations:**
+        - Monthly savings of ${monthly_savings:.2f} may be from a longer term rather than better rate
+        - {'Term extended by' if term_diff > 0 else 'Term reduced by'} {abs(term_diff):.1f} years
+        - Review total interest paid over the life of the loan
+        """
+    elif monthly_savings <= 0 and interest_rate_diff > 0:
+        recommendation = "⚠️ **MIXED SCENARIO**: Lower rate but higher monthly payment. May be beneficial for long-term interest savings or building equity faster."
+        details = f"""
+        **Considerations:**
+        - Interest rate reduction of {interest_rate_diff:.3f}%
+        - Higher monthly payment of ${abs(monthly_savings):.2f}
+        - {'Term reduced by' if term_diff < 0 else 'Term extended by'} {abs(term_diff):.1f} years
+        - {'Higher equity position' if equity_position_change > 0 else 'Lower equity position'} of ${abs(equity_position_change):.2f}
+        """
+    else:
+        recommendation = "❌ **NOT RECOMMENDED**: This scenario increases both your monthly payment and interest rate."
+        details = f"""
+        **Concerns:**
+        - Monthly payment increase of ${abs(monthly_savings):.2f}
+        - Interest rate increase of {abs(interest_rate_diff):.3f}%
+        - {'Term extended by' if term_diff > 0 else 'Term reduced by'} {abs(term_diff):.1f} years
+        """
 
 # Display recommendation
 st.markdown(recommendation)
@@ -328,19 +446,34 @@ st.markdown(details)
 st.write("**Additional considerations:**")
 consideration_col1, consideration_col2 = st.columns(2)
 
-with consideration_col1:
-    st.markdown("""
-    - **Closing costs**: Typical refinance costs range from 2-5% of loan amount
-    - **How long you'll stay**: If moving soon, may not recoup costs
-    - **Cash-out refinance**: Consider if you need funds for other purposes
-    """)
+if scenario_type == "refinance":
+    with consideration_col1:
+        st.markdown("""
+        - **Break-even analysis**: Factor in how long you'll stay in the home
+        - **Rate timing**: Consider if rates might drop further before refinancing
+        - **Cash-out usage**: If borrowing extra cash, have a clear plan for use
+        """)
 
-with consideration_col2:
-    st.markdown("""
-    - **Tax implications**: Mortgage interest deduction may change
-    - **PMI**: New loan might add or remove PMI requirements
-    - **Future rates**: Consider if rates might drop further
-    """)
+    with consideration_col2:
+        st.markdown("""
+        - **PMI impact**: Refinancing might add/remove PMI based on new LTV
+        - **Tax implications**: Interest deduction may change with new loan amount
+        - **Appraisal requirement**: Property value may need professional appraisal
+        """)
+else:
+    with consideration_col1:
+        st.markdown("""
+        - **Closing costs**: Typical costs range from 2-3% of home price
+        - **Down payment source**: Consider impact on other financial goals
+        - **Market conditions**: Factor in local real estate trends
+        """)
+
+    with consideration_col2:
+        st.markdown("""
+        - **PMI**: Consider 20% down payment to avoid PMI
+        - **Future rates**: Lock in rate if favorable compared to trends
+        - **Total housing costs**: Include HOA, utilities, maintenance
+        """)
 
 ###############################################################
 

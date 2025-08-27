@@ -9,7 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Import your utility functions
 from src.utils.navigation_utils import register_page, safe_navigate
-from src.utils.mortgage_utils import update_new_mortgage, new_mortgage_persistent_storage, new_mortgage_run_calcs
+from src.utils.mortgage_utils import update_new_mortgage, new_mortgage_persistent_storage, new_mortgage_run_calcs, refinance_persistent_storage, refinance_run_calcs
 
 # Import your visualization functions
 from src.visualizations.mortgage_charts import (
@@ -27,6 +27,7 @@ from src.visualizations.mortgage_charts import (
 ###########################################################
 
 new_mortgage_persistent_storage()
+refinance_persistent_storage()
 
 ###########################################################
 
@@ -524,4 +525,365 @@ with new:
                 st.stop()
 
 with refinance:
-    st.info("Coming soon to an app near you 👨🏽‍💻")
+    # Helper functions for refinance tab
+    def update_rf_data(field):
+        st.session_state.rf_data[field] = st.session_state[f"temp_rf_{field}"]
+
+    def update_rf_tax_values(source):
+        if source == "monthly":
+            st.session_state.rf_data["monthly_tax"] = st.session_state["temp_rf_monthly_tax"]
+            st.session_state.rf_data["annual_tax"] = st.session_state.rf_data["monthly_tax"] * 12
+            st.session_state["temp_rf_annual_tax"] = st.session_state.rf_data["annual_tax"]
+        elif source == "annual":
+            st.session_state.rf_data["annual_tax"] = st.session_state["temp_rf_annual_tax"]
+            st.session_state.rf_data["monthly_tax"] = st.session_state.rf_data["annual_tax"] / 12
+            st.session_state["temp_rf_monthly_tax"] = st.session_state.rf_data["monthly_tax"]
+        elif source == "toggle":
+            if st.session_state.rf_data["is_monthly_tax"]:
+                st.session_state["temp_rf_monthly_tax"] = st.session_state.rf_data["monthly_tax"]
+            else:
+                st.session_state["temp_rf_annual_tax"] = st.session_state.rf_data["annual_tax"]
+
+    def update_rf_insurance_values(source):
+        if source == "monthly":
+            st.session_state.rf_data["monthly_ins"] = st.session_state["temp_rf_monthly_ins"]
+            st.session_state.rf_data["annual_ins"] = st.session_state.rf_data["monthly_ins"] * 12
+            st.session_state["temp_rf_annual_ins"] = st.session_state.rf_data["annual_ins"]
+        elif source == "annual":
+            st.session_state.rf_data["annual_ins"] = st.session_state["temp_rf_annual_ins"]
+            st.session_state.rf_data["monthly_ins"] = st.session_state.rf_data["annual_ins"] / 12
+            st.session_state["temp_rf_monthly_ins"] = st.session_state.rf_data["monthly_ins"]
+        elif source == "toggle":
+            if st.session_state.rf_data["is_monthly_ins"]:
+                st.session_state["temp_rf_monthly_ins"] = st.session_state.rf_data["monthly_ins"]
+            else:
+                st.session_state["temp_rf_annual_ins"] = st.session_state.rf_data["annual_ins"]
+
+    st.write("Configure your refinance scenario below. This will use your current property value and loan balance.")
+    st.write("")
+    
+    col1, buff1, col2, buff2, col3 = st.columns([5, 0.5, 8, 0.5, 6])
+
+    # Left column - basic loan details
+    with col1:
+        st.write("")
+        st.write("")
+        
+        rate = st.number_input(
+            "**New Interest Rate (%)**",
+            min_value=0.0001,
+            step=0.005,
+            format="%0.3f",
+            key="temp_rf_rate",
+            on_change=lambda: update_rf_data("rate"),
+            help="Interest rate for the new refinanced loan"
+        )
+        
+        st.write("")
+        
+        term = st.number_input(
+            "**New Loan Term (years)**",
+            min_value=1,
+            key="temp_rf_term",
+            on_change=lambda: update_rf_data("term"),
+            help="Length of the new loan term"
+        )
+        
+        st.write("")
+        
+        current_balance = st.number_input(
+            "**Current Loan Balance ($)**",
+            min_value=0.0,
+            step=1000.0,
+            key="temp_rf_current_loan_balance",
+            on_change=lambda: update_rf_data("current_loan_balance"),
+            help="Your current mortgage balance that will be paid off"
+        )
+
+    # Middle column - property and cash out
+    with col2:
+        st.write("")
+        st.write("")
+        
+        current_value = st.number_input(
+            "**Current Property Value ($)**",
+            min_value=0.0001,
+            step=5000.0,
+            key="temp_rf_current_property_value",
+            on_change=lambda: update_rf_data("current_property_value"),
+            help="Current estimated value of your property"
+        )
+        
+        st.write("")
+        
+        cash_out = st.number_input(
+            "**Cash Out Amount ($)**",
+            min_value=0.0,
+            step=1000.0,
+            key="temp_rf_cash_out_amount",
+            on_change=lambda: update_rf_data("cash_out_amount"),
+            help="Additional cash to borrow (0 for rate-and-term refinance)"
+        )
+        
+        st.write("")
+        
+        closing_cost_pct = st.number_input(
+            "**Closing Costs (%)**",
+            min_value=1.0,
+            max_value=10.0,
+            step=0.1,
+            format="%.1f",
+            key="temp_rf_closing_cost_percentage",
+            on_change=lambda: update_rf_data("closing_cost_percentage"),
+            help="Estimated closing costs as percentage of new loan amount"
+        )
+        
+        st.write("")
+        
+        sqft = st.number_input(
+            "**Square Footage**",
+            min_value=0.0001,
+            step=100.0,
+            key="temp_rf_sqft",
+            on_change=lambda: update_rf_data("sqft"),
+            help="Property square footage (typically same as current)"
+        )
+
+    # Right column - taxes and insurance
+    with col3:
+        st.write("")
+        
+        is_monthly_tax = st.toggle(
+            "Annual/Monthly Tax",
+            key="temp_rf_is_monthly_tax",
+            on_change=lambda: (update_rf_data("is_monthly_tax"), update_rf_tax_values("toggle"))
+        )
+
+        if is_monthly_tax:
+            monthly_tax = st.number_input(
+                "**Monthly Tax ($)**",
+                min_value=0.0,
+                step=10.0,
+                key="temp_rf_monthly_tax",
+                on_change=lambda: update_rf_tax_values("monthly")
+            )
+            st.session_state.rf_data["annual_tax"] = st.session_state["temp_rf_monthly_tax"] * 12
+            tax = st.session_state.rf_data["annual_tax"]
+        else:
+            tax = st.number_input(
+                "**Annual Tax ($)**",
+                min_value=0.0,
+                step=100.0,
+                key="temp_rf_annual_tax",
+                on_change=lambda: update_rf_tax_values("annual")
+            )
+            st.session_state.rf_data["monthly_tax"] = st.session_state["temp_rf_annual_tax"] / 12
+
+        is_monthly_ins = st.toggle(
+            "Annual/Monthly Ins",
+            key="temp_rf_is_monthly_ins",
+            on_change=lambda: (update_rf_data("is_monthly_ins"), update_rf_insurance_values("toggle"))
+        )
+
+        if is_monthly_ins:
+            monthly_ins = st.number_input(
+                "**Monthly Insurance ($)**",
+                min_value=0.0,
+                step=10.0,
+                key="temp_rf_monthly_ins",
+                on_change=lambda: update_rf_insurance_values("monthly")
+            )
+            st.session_state.rf_data["annual_ins"] = st.session_state["temp_rf_monthly_ins"] * 12
+            insurance = st.session_state.rf_data["annual_ins"]
+        else:
+            insurance = st.number_input(
+                "**Annual Insurance ($)**",
+                min_value=0.0,
+                step=100.0,
+                key="temp_rf_annual_ins",
+                on_change=lambda: update_rf_insurance_values("annual")
+            )
+            st.session_state.rf_data["monthly_ins"] = st.session_state["temp_rf_annual_ins"] / 12
+        
+        st.write("")
+        
+        prin = st.number_input(
+            "**Extra Monthly Principal ($)**",
+            min_value=0.0,
+            step=100.0,
+            key="temp_rf_prin",
+            on_change=lambda: update_rf_data("prin")
+        )
+        
+        prepay = st.number_input(
+            "**Prepay Periods (months)**",
+            min_value=0,
+            step=1,
+            key="temp_rf_prepay",
+            on_change=lambda: update_rf_data("prepay")
+        )
+
+    ###########################################################
+    # Calculate Button and Results
+    ###########################################################
+    
+    st.write("")
+    calc_col1, calc_col2, calc_col3 = st.columns([4, 2, 4])
+
+    with calc_col2:
+        if "show_refinance_calcs" not in st.session_state:
+            st.session_state.show_refinance_calcs = False
+
+        if st.button("**Calculate Refinance**", key="calculate_refinance"):
+            refinance_run_calcs()
+
+    ###########################################################
+    # Display Refinance Results
+    ###########################################################
+
+    metrics, payment, amort, growth, interest_breakdown, timeline = st.tabs([
+        "Calculations", "Payment Breakdown", "Amortization", 
+        "Equity Growth", "Interest Analysis", "Mortgage Timeline"
+    ])
+
+    with metrics:
+        if st.session_state.show_refinance_calcs:
+            try:
+                if 'RefinanceScen' not in locals():
+                    if "refinance_scenario" in st.session_state and st.session_state.refinance_scenario is not None:
+                        RefinanceScen = st.session_state.refinance_scenario
+                    else:
+                        st.warning("Please click Calculate Refinance to update the metrics.")
+                        st.stop()
+                    
+                buff3, mid, buff4 = st.columns([6, 18, 6])
+
+                with mid:
+                    st.write("")
+                    st.header("&ensp;:green[**Refinance Calculations**]")
+
+                loan_col, payment_col, other = st.columns([4, 4, 4])
+
+                with loan_col: 
+                    st.subheader("**Loan Metrics:**", divider="green")
+                    st.metric(
+                        "**New Loan Amount:**",
+                        value=f"${RefinanceScen.loan_amount:,.2f}"
+                    )
+                    st.metric(
+                        "**Loan-to-Value Ratio:**",
+                        value=f"{RefinanceScen.loan_to_value:.1%}"
+                    )
+                    st.metric(
+                        "**Equity After Refinance:**",
+                        value=f"${RefinanceScen.equity_after_refinance:,.2f}"
+                    )
+
+                with payment_col:
+                    st.subheader("**Payment Metrics:**", divider="green")
+                    st.metric(
+                        "**New Monthly Payment:**",
+                        value=f"${RefinanceScen.total_pmt:,.2f}"
+                    )
+                    st.metric(
+                        "**Estimated Monthly PMI:**",
+                        value=f"${RefinanceScen.monthly_pmi:,.2f}"
+                    )
+                    st.metric(
+                        "**PMI Payment Months:**",
+                        value=f"{RefinanceScen.pmi_periods_remaining()}"
+                    )
+
+                with other:
+                    st.subheader("**Financial Impact:**", divider="green")
+                    st.metric(
+                        "**Closing Costs:**",
+                        value=f"${RefinanceScen.closing_costs:,.2f}"
+                    )
+                    if RefinanceScen.cash_out_amount > 0:
+                        st.metric(
+                            "**Net Cash to You:**",
+                            value=f"${RefinanceScen.net_cash_to_borrower:,.2f}"
+                        )
+                    st.metric(
+                        "**Property Value/SqFt:**",
+                        value=f"${RefinanceScen.price_per_sqft:,.0f}"
+                    )
+
+                # Save to session state for comparison
+                st.session_state["refinance_scenario"] = RefinanceScen
+
+            except NameError:
+                st.warning("Please click Calculate Refinance to update the metrics.")
+                st.stop()
+
+    # Other tabs use the same visualization functions as new mortgage
+    with payment:
+        if st.session_state.show_refinance_calcs:
+            try:
+                if 'RefinanceScen' not in locals():
+                    if "refinance_scenario" in st.session_state and st.session_state.refinance_scenario is not None:
+                        RefinanceScen = st.session_state.refinance_scenario
+                    else:
+                        st.warning("Please click Calculate Refinance to update the metrics.")
+                        st.stop()
+                create_single_mortgage_payment_breakdown(RefinanceScen)
+            except NameError:
+                st.warning("Please click Calculate Refinance to update the metrics.")
+                st.stop()
+
+    with amort:
+        if st.session_state.show_refinance_calcs:
+            try:
+                if 'RefinanceScen' not in locals():
+                    if "refinance_scenario" in st.session_state and st.session_state.refinance_scenario is not None:
+                        RefinanceScen = st.session_state.refinance_scenario
+                    else:
+                        st.warning("Please click Calculate Refinance to update the metrics.")
+                        st.stop()
+                create_single_mortgage_amortization_chart(RefinanceScen)
+            except NameError:
+                st.warning("Please click Calculate Refinance to update the metrics.")
+                st.stop()
+
+    with growth:
+        if st.session_state.show_refinance_calcs:
+            try:
+                if 'RefinanceScen' not in locals():
+                    if "refinance_scenario" in st.session_state and st.session_state.refinance_scenario is not None:
+                        RefinanceScen = st.session_state.refinance_scenario
+                    else:
+                        st.warning("Please click Calculate Refinance to update the metrics.")
+                        st.stop()
+                create_equity_growth_chart(RefinanceScen)
+            except NameError:
+                st.warning("Please click Calculate Refinance to update the metrics.")
+                st.stop()
+
+    with interest_breakdown:
+        if st.session_state.show_refinance_calcs:
+            try:
+                if 'RefinanceScen' not in locals():
+                    if "refinance_scenario" in st.session_state and st.session_state.refinance_scenario is not None:
+                        RefinanceScen = st.session_state.refinance_scenario
+                    else:
+                        st.warning("Please click Calculate Refinance to update the metrics.")
+                        st.stop()
+                create_interest_principal_ratio_chart(RefinanceScen)
+            except NameError:
+                st.warning("Please click Calculate Refinance to update the metrics.")
+                st.stop()
+
+    with timeline:
+        if st.session_state.show_refinance_calcs:
+            try:
+                if 'RefinanceScen' not in locals():
+                    if "refinance_scenario" in st.session_state and st.session_state.refinance_scenario is not None:
+                        RefinanceScen = st.session_state.refinance_scenario
+                    else:
+                        st.warning("Please click Calculate Refinance to update the metrics.")
+                        st.stop()
+                create_mortgage_timeline_chart(RefinanceScen)
+            except NameError:
+                st.warning("Please click Calculate Refinance to update the metrics.")
+                st.stop()

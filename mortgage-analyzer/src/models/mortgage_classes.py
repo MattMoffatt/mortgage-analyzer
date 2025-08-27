@@ -702,4 +702,184 @@ class NewMortgageScenario(Mortgage):
     @property
     def initial_investment(self) -> float:
         return self.downpayment_amount + self.closing_costs
+
+
+############################################################
+
+"""
+RefinanceScenario dataclass documentation:
+
+Properties:
+
+Mortgage Abstract Class - inherited
+----------------------------------------
+    rate - interest rate on mortgage (as a percentage, e.g. 4.5 for 4.5%),
+    years - years on loan term,
+    tax - annual expected tax,
+    ins - annual expected insurance,
+    sqft - house square footage
+
+    Optional:
+        extra_principal - amount of monthly extra principal you are paying
+        prepay_periods - number of periods you expect to pay the extra principal
+
+RefinanceScenario Class
+----------------------------------------
+    current_loan_balance - current balance of existing mortgage,
+    current_property_value - current estimated property value,
+    cash_out_amount - additional cash to borrow (0 for rate-and-term refi),
     
+    calculated:
+        loan_amount - current_loan_balance + cash_out_amount,
+        loan_to_value - loan_amount / current_property_value,
+        price - same as current_property_value (for compatibility),
+        monthly_pmi - calculated based on LTV ratio,
+        total_pmt - principal_and_interest + monthly_tax + monthly_ins + monthly_pmi + extra_principal,
+        price_per_sqft - calculated from current_property_value / sqft,
+        closing_costs - estimated refinance closing costs (typically 2-3% of loan amount),
+        net_cash_to_borrower - cash_out_amount minus closing_costs
+
+"""
+
+
+@dataclass(kw_only=True)
+class RefinanceScenario(Mortgage):
+    _current_loan_balance: float = field(repr=True)
+    _current_property_value: float = field(repr=True)
+    _cash_out_amount: float = field(default=0.0, repr=True)
+    _pmi_rate: float = field(default=0.005, repr=True)
+    _closing_cost_percentage: float = field(default=0.025, repr=True)  # 2.5% default
+
+    def __post_init__(self):
+        # Call parent validation
+        super().__post_init__()
+
+        # Store initial values
+        current_loan_balance = self._current_loan_balance
+        current_property_value = self._current_property_value
+        cash_out_amount = self._cash_out_amount
+        pmi_rate = self._pmi_rate
+        closing_cost_percentage = self._closing_cost_percentage
+
+        # Apply validation through setters
+        self.current_loan_balance = current_loan_balance
+        self.current_property_value = current_property_value
+        self.cash_out_amount = cash_out_amount
+        self.pmi_rate = pmi_rate
+        self.closing_cost_percentage = closing_cost_percentage
+
+    @property
+    def current_loan_balance(self) -> float:
+        return self._current_loan_balance
+
+    @current_loan_balance.setter
+    def current_loan_balance(self, value: float):
+        if value < 0:
+            raise ValueError("Current loan balance cannot be negative")
+        self._current_loan_balance = value
+
+    @property
+    def current_property_value(self) -> float:
+        return self._current_property_value
+
+    @current_property_value.setter
+    def current_property_value(self, value: float):
+        if value <= 0:
+            raise ValueError("Current property value must be positive")
+        self._current_property_value = value
+
+    @property
+    def cash_out_amount(self) -> float:
+        return self._cash_out_amount
+
+    @cash_out_amount.setter
+    def cash_out_amount(self, value: float):
+        if value < 0:
+            raise ValueError("Cash out amount cannot be negative")
+        self._cash_out_amount = value
+
+    @property
+    def pmi_rate(self) -> float:
+        return self._pmi_rate
+
+    @pmi_rate.setter
+    def pmi_rate(self, value: float):
+        if value < 0:
+            raise ValueError("PMI rate cannot be negative")
+        if value > 0.05:  # 5% would be extremely high for PMI
+            raise ValueError("PMI rate is unreasonably high (>5%)")
+        self._pmi_rate = value
+
+    @property
+    def closing_cost_percentage(self) -> float:
+        return self._closing_cost_percentage
+
+    @closing_cost_percentage.setter
+    def closing_cost_percentage(self, value: float):
+        if value < 0:
+            raise ValueError("Closing cost percentage cannot be negative")
+        if value > 0.1:  # 10% would be extremely high for closing costs
+            raise ValueError("Closing cost percentage is unreasonably high (>10%)")
+        self._closing_cost_percentage = value
+
+    @property
+    def loan_amount(self) -> float:
+        return self.current_loan_balance + self.cash_out_amount
+
+    @property
+    def price(self) -> float:
+        return self.current_property_value
+
+    @property
+    def loan_to_value(self) -> float:
+        return self.loan_amount / self.current_property_value
+
+    @property
+    def monthly_pmi(self) -> float:
+        if self.loan_to_value <= 0.8:
+            return 0.0
+        else:
+            return self.loan_amount * self.pmi_rate / 12
+
+    @property
+    def periods_remaining(self) -> int:
+        return self.years * 12
+
+    @property
+    def price_per_sqft(self) -> float:
+        return self.current_property_value / self.sqft
+
+    @property
+    def total_pmt(self) -> float:
+        return (
+            self.principal_and_interest
+            + self.monthly_tax
+            + self.monthly_ins
+            + self.monthly_pmi
+            + self.extra_principal
+        )
+
+    @property
+    def end_date(self) -> str:
+        start_date = dt.now()
+        end_date = start_date + relativedelta(years=self.years)
+        return end_date.strftime("%m/%d/%Y")
+
+    @property
+    def closing_costs(self) -> float:
+        return self.loan_amount * self.closing_cost_percentage
+
+    @property
+    def net_cash_to_borrower(self) -> float:
+        """Amount of cash borrower receives after closing costs"""
+        return max(0, self.cash_out_amount - self.closing_costs)
+
+    @property
+    def initial_investment(self) -> float:
+        """For refinance, this is the closing costs (negative cash flow)"""
+        return self.closing_costs
+
+    @property
+    def equity_after_refinance(self) -> float:
+        """Remaining equity after refinance"""
+        return self.current_property_value - self.loan_amount
