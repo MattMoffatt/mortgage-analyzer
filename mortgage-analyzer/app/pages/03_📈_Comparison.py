@@ -169,7 +169,7 @@ with col2:
             "New Equity Position",
             f"${equity_new:,.2f}",
             f"${equity_diff:,.2f} difference",
-            delta_color="normal"
+            delta_color="normal" if equity_diff >= 0 else "inverse"
         )
 
 # Loan details comparison
@@ -206,7 +206,7 @@ with col3:
         "New Monthly PMI",
         f"${newMort.monthly_pmi:,.2f}",
         f"{pmi_diff_text} by ${abs(pmi_diff):,.2f}",
-        delta_color="normal"
+        delta_color="inverse" if pmi_diff > 0 else "normal"
     )
 
 # Show detailed metric table with expandable section
