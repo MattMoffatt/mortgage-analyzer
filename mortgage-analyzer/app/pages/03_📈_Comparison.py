@@ -118,7 +118,7 @@ with col1:
     st.metric(
         "New Monthly Payment",
         f"${newMort.total_pmt:,.2f}",
-        f"{monthly_diff_text}: ${abs(monthly_diff):,.2f}",
+        f"${monthly_diff:,.2f}" if monthly_diff >= 0 else f"-${abs(monthly_diff):,.2f}",
         delta_color="inverse"
     )
     
@@ -129,7 +129,7 @@ with col1:
     st.metric(
         "New Interest Rate",
         f"{newMort.rate:.3f}%",
-        f"{interest_diff_text} by {abs(interest_diff):.3f}%",
+        f"{interest_diff:+.3f}%",
         delta_color="inverse"
     )
 
@@ -151,8 +151,8 @@ with col2:
         st.metric(
             "Equity After Refinance",
             f"${equity_new:,.2f}",
-            f"${equity_diff:,.2f} difference",
-            delta_color="normal" if equity_diff >= 0 else "inverse"
+            f"${equity_diff:,.0f}" if equity_diff >= 0 else f"-${abs(equity_diff):,.0f}",
+            delta_color="normal"
         )
     else:
         equity_new = newMort.price - newMort.loan_amount
@@ -168,8 +168,8 @@ with col2:
         st.metric(
             "New Equity Position",
             f"${equity_new:,.2f}",
-            f"${equity_diff:,.2f} difference",
-            delta_color="normal" if equity_diff >= 0 else "inverse"
+            f"${equity_diff:,.0f}" if equity_diff >= 0 else f"-${abs(equity_diff):,.0f}",
+            delta_color="normal"
         )
 
 # Loan details comparison
@@ -205,7 +205,7 @@ with col3:
     st.metric(
         "New Monthly PMI",
         f"${newMort.monthly_pmi:,.2f}",
-        f"{pmi_diff_text} by ${abs(pmi_diff):,.2f}",
+        f"${pmi_diff:,.2f}" if pmi_diff >= 0 else f"-${abs(pmi_diff):,.2f}",
         delta_color="inverse" if pmi_diff > 0 else "normal"
     )
 
@@ -228,9 +228,16 @@ with st.expander("View Detailed Metrics Comparison"):
         else:  # "context" or other
             indicator = ""
             
-        formatted_diff = row["Format"].format(diff_value)
-        if diff_value > 0:
-            formatted_diff = "+" + formatted_diff
+        # Special handling for currency formatting to fix dollar sign placement
+        if row["Format"] == "${:,.2f}":
+            if diff_value >= 0:
+                formatted_diff = f"+${diff_value:,.2f}"
+            else:
+                formatted_diff = f"-${abs(diff_value):,.2f}"
+        else:
+            formatted_diff = row["Format"].format(diff_value)
+            if diff_value > 0 and not formatted_diff.startswith('+'):
+                formatted_diff = "+" + formatted_diff
             
         display_df.loc[i, "Difference"] = f"{formatted_diff} {indicator}"
     
